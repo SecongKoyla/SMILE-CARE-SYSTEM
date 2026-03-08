@@ -20,7 +20,7 @@ public class TimeSlot {
     private LocalTime endTime;
 
     @Enumerated(EnumType.STRING)
-    private SlotStatus status;
+    private TimeSlotStatus status;
 
     private LocalDateTime createdAt;
 
@@ -65,11 +65,11 @@ public class TimeSlot {
         this.endTime = endTime;
     }
 
-    public SlotStatus getStatus() {
+    public TimeSlotStatus getStatus() {
         return status;
     }
 
-    public void setStatus(SlotStatus status) {
+    public void setStatus(TimeSlotStatus status) {
         this.status = status;
     }
 

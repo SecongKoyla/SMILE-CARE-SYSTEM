@@ -4,6 +4,7 @@ import com.smilecare.smilecare_backend.model.User;
 import com.smilecare.smilecare_backend.model.Role;
 import com.smilecare.smilecare_backend.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -12,10 +13,12 @@ import java.time.LocalDateTime;
 public class DataLoader implements CommandLineRunner {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    // Constructor injection (Spring Boot will auto-wire repository)
-    public DataLoader(UserRepository userRepository) {
+    // Constructor injection (Spring Boot will auto-wire repository and passwordEncoder)
+    public DataLoader(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -26,7 +29,7 @@ public class DataLoader implements CommandLineRunner {
             User user = new User();
             user.setFullName("Test User");
             user.setEmail(email);
-            user.setPasswordHash("123456");
+            user.setPasswordHash(passwordEncoder.encode("123456"));
             user.setRole(Role.valueOf("ADMIN"));
             user.setCreatedAt(LocalDateTime.now());
 

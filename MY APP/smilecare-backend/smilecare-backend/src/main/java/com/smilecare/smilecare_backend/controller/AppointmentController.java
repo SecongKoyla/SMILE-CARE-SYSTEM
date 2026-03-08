@@ -23,6 +23,15 @@ public class AppointmentController {
         return service.getAllAppointments();
     }
 
+    @PutMapping("/{id}/approve")
+    public Appointment approveAppointment(
+            @PathVariable Long id,
+            @RequestParam Long adminId
+    ) {
+        return service.approveAppointment(id, adminId);
+    }
+
+
     @PostMapping("/book")
     public Appointment bookAppointment(
             @Valid @RequestBody AppointmentRequest request) {
