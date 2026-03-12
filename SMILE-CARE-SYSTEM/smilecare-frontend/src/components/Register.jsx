@@ -113,7 +113,6 @@ const css = `
     font-weight: 700;
   }
 
-  /* Progress bar */
   .sc-progress {
     display: flex;
     gap: 5px;
@@ -213,21 +212,35 @@ const css = `
 `;
 
 export default function Register() {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); // ✅ confirm password
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const filled = [email, username, password].filter(Boolean).length;
+  const filled = [fullName, email, password, confirmPassword].filter(Boolean).length;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await register(email, username, password);
-    if (res.message) {
-      navigate("/dashboard");
-    } else {
-      setError(res.error || "Registration failed. Please try again.");
+    setError("");
+
+    // Frontend password match validation
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    try {
+      const res = await register(fullName, email, password, confirmPassword);
+
+      if (res.message) {
+        navigate("/dashboard");
+      } else {
+        setError(res.error || "Registration failed");
+      }
+    } catch (err) {
+      setError(err.message || "Server error. Please try again.");
     }
   };
 
@@ -244,7 +257,7 @@ export default function Register() {
           </div>
 
           <div className="sc-progress">
-            {[0, 1, 2].map(i => (
+            {[0, 1, 2, 3].map(i => (
               <div key={i} className={`sc-progress-bar${i < filled ? " filled" : ""}`} />
             ))}
           </div>
@@ -260,12 +273,13 @@ export default function Register() {
               <input
                 type="text"
                 placeholder="Jane Smith"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
                 autoComplete="name"
                 required
               />
             </div>
+
             <div className="sc-field">
               <label>Email</label>
               <input
@@ -277,6 +291,7 @@ export default function Register() {
                 required
               />
             </div>
+
             <div className="sc-field">
               <label>Password</label>
               <input
@@ -288,6 +303,19 @@ export default function Register() {
                 required
               />
             </div>
+
+            <div className="sc-field">
+              <label>Confirm Password</label>
+              <input
+                type="password"
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                required
+              />
+            </div>
+
             <button type="submit" className="sc-btn">Create Account →</button>
           </form>
 

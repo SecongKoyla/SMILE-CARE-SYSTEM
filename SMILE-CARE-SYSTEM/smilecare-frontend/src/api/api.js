@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8080/api/v1";
+const API_URL = "http://localhost:8082/api/v1";
 
 /**
  * Login a user
@@ -35,25 +35,25 @@ export async function login(email, password) {
  * @returns {Promise<Object>} new user data
  * @throws {Error} with backend error message if registration fails
  */
-export async function register(email, fullName, password) {
+export async function register(fullName, email, password, confirmPassword) {
   try {
-    const res = await fetch(`${API_URL}/register`, {
+    const response = await fetch("http://localhost:8082/api/v1/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         fullName,
         email,
-        password
+        password,
+        confirmPassword // ✅ send to backend
       })
     });
 
-    if (!res.ok) {
-      const errData = await res.json();
-      throw new Error(errData.error || "Registration failed");
-    }
+    const data = await response.json();
 
-    return await res.json();
+    if (!response.ok) throw new Error(data.error || "Registration failed");
+
+    return data;
   } catch (err) {
-    throw new Error(err.message || "Network error");
+    throw new Error(err.message || "Server error. Please try again.");
   }
 }
