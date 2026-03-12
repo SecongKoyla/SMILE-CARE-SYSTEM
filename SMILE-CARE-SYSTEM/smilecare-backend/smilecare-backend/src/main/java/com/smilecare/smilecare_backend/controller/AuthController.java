@@ -1,16 +1,17 @@
 package com.smilecare.smilecare_backend.controller;
 
+import com.smilecare.smilecare_backend.dto.LoginRequest;
+import com.smilecare.smilecare_backend.dto.RegisterRequest;
 import com.smilecare.smilecare_backend.model.Role;
 import com.smilecare.smilecare_backend.model.User;
 import com.smilecare.smilecare_backend.repository.UserRepository;
+import com.smilecare.smilecare_backend.service.AuthService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -18,66 +19,51 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthService authService;   // ✅ add this
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthController(UserRepository userRepository,
+                          PasswordEncoder passwordEncoder,
+                          AuthService authService) {   // ✅ inject service
+
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.authService = authService;
     }
 
     // LOGIN
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
 
-        String email = request.get("email");
-        String password = request.get("password");
+        try {
 
-        Optional<User> userOpt = userRepository.findByEmail(email);
+            Map<String, Object> response = authService.login(request); // ✅ use object
 
-        if (userOpt.isEmpty()) {
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+
             return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("error", "User not found"));
+                    .status(401)
+                    .body(Map.of("error", e.getMessage()));
         }
-
-        User user = userOpt.get();
-
-        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("error", "Invalid password"));
-        }
-
-        return ResponseEntity.ok(user);
     }
-
-
 
     // REGISTER
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        String fullName = request.get("fullName");
-        String password = request.get("password"); // or password if raw
-        String role = request.getOrDefault("role", "PATIENT");
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
 
-        // Check if email already exists
-        if (userRepository.findByEmail(email).isPresent()) {
+        try {
+
+            Map<String, Object> response = authService.register(request);
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+
             return ResponseEntity
                     .badRequest()
-                    .body(Map.of("error", "Registration failed. Email already exists"));
+                    .body(Map.of("error", e.getMessage()));
         }
-
-        // Create new user
-        User newUser = new User();
-        newUser.setEmail(email);
-        newUser.setFullName(fullName);
-        newUser.setPasswordHash(passwordEncoder.encode(password));
-        newUser.setRole(Role.PATIENT);
-
-        userRepository.save(newUser);
-
-        return ResponseEntity.ok(Map.of("message", "Registration successful", "user", newUser));
     }
-
 
 }
