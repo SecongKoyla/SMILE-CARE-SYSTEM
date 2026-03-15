@@ -1,5 +1,4 @@
 package com.smilecare.smilecare_backend.model;
-import com.smilecare.smilecare_backend.model.Role;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

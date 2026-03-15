@@ -52,7 +52,8 @@ export async function register(email, fullName, password) {
       throw new Error(errData.error || "Registration failed");
     }
 
-    return await res.json();
+    const data = await res.json();
+    return data.user; // Return the user object from the response
   } catch (err) {
     throw new Error(err.message || "Network error");
   }

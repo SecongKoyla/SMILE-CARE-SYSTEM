@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,6 +21,16 @@ public class AuthController {
     public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    // Helper method to return user data without password
+    private Map<String, Object> getUserResponse(User user) {
+        return Map.of(
+            "id", user.getId(),
+            "email", user.getEmail(),
+            "fullName", user.getFullName(),
+            "role", user.getRole().toString()
+        );
     }
 
     // LOGIN
@@ -47,7 +56,7 @@ public class AuthController {
                     .body(Map.of("error", "Invalid password"));
         }
 
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(getUserResponse(user));
     }
 
 
@@ -58,7 +67,6 @@ public class AuthController {
         String email = request.get("email");
         String fullName = request.get("fullName");
         String password = request.get("password"); // or password if raw
-        String role = request.getOrDefault("role", "PATIENT");
 
         // Check if email already exists
         if (userRepository.findByEmail(email).isPresent()) {
@@ -76,7 +84,10 @@ public class AuthController {
 
         userRepository.save(newUser);
 
-        return ResponseEntity.ok(Map.of("message", "Registration successful", "user", newUser));
+        return ResponseEntity.ok(Map.of(
+            "message", "Registration successful", 
+            "user", getUserResponse(newUser)
+        ));
     }
 
 
