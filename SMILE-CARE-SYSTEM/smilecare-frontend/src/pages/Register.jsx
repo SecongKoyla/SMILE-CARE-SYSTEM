@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { register } from "../api/api";
+import { useNavigate, Link } from "react-router-dom";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,500;1,400&display=swap');
@@ -112,7 +113,6 @@ const css = `
     font-weight: 700;
   }
 
-  /* Progress bar */
   .sc-progress {
     display: flex;
     gap: 5px;
@@ -211,24 +211,36 @@ const css = `
   .sc-terms a { color: #8ABFB0; text-decoration: none; }
 `;
 
-export default function Register({ onRegister, onSwitchToLogin }) {
+export default function Register() {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); // ✅ confirm password
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const filled = [email, username, password].filter(Boolean).length;
+  const filled = [fullName, email, password, confirmPassword].filter(Boolean).length;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    
+
+    // Frontend password match validation
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
-      const user = await register(email, username, password);
-      console.log("Registered user:", user);
-      onRegister(user); // call parent handler to set user state
+      const res = await register(fullName, email, password, confirmPassword);
+
+      if (res.message) {
+        navigate("/dashboard");
+      } else {
+        setError(res.error || "Registration failed");
+      }
     } catch (err) {
-      setError(err.message || "Registration failed. Please try again.");
+      setError(err.message || "Server error. Please try again.");
     }
   };
 
@@ -245,14 +257,14 @@ export default function Register({ onRegister, onSwitchToLogin }) {
           </div>
 
           <div className="sc-progress">
-            {[0, 1, 2].map(i => (
+            {[0, 1, 2, 3].map(i => (
               <div key={i} className={`sc-progress-bar${i < filled ? " filled" : ""}`} />
             ))}
           </div>
 
           <h1 className="sc-heading">Your <em>smile</em> starts here</h1>
           <p className="sc-sub">
-            Already registered? <a onClick={() => onSwitchToLogin?.()} style={{cursor: 'pointer'}}>Sign in</a>
+            Already registered? <Link to="/">Sign in</Link>
           </p>
 
           <form onSubmit={handleSubmit}>
@@ -261,12 +273,13 @@ export default function Register({ onRegister, onSwitchToLogin }) {
               <input
                 type="text"
                 placeholder="Jane Smith"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
                 autoComplete="name"
                 required
               />
             </div>
+
             <div className="sc-field">
               <label>Email</label>
               <input
@@ -278,6 +291,7 @@ export default function Register({ onRegister, onSwitchToLogin }) {
                 required
               />
             </div>
+
             <div className="sc-field">
               <label>Password</label>
               <input
@@ -289,6 +303,19 @@ export default function Register({ onRegister, onSwitchToLogin }) {
                 required
               />
             </div>
+
+            <div className="sc-field">
+              <label>Confirm Password</label>
+              <input
+                type="password"
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                required
+              />
+            </div>
+
             <button type="submit" className="sc-btn">Create Account →</button>
           </form>
 
