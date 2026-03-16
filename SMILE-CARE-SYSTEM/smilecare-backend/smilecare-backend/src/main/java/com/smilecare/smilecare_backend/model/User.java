@@ -20,6 +20,10 @@ public class User {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
+    @Lob
+    @Column(name = "profile_photo_url", columnDefinition = "TEXT")
+    private String profilePhotoUrl;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 
@@ -70,6 +74,14 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public String getProfilePhotoUrl() {
+        return profilePhotoUrl;
+    }
+
+    public void setProfilePhotoUrl(String profilePhotoUrl) {
+        this.profilePhotoUrl = profilePhotoUrl;
     }
 
     public LocalDateTime getCreatedAt() {

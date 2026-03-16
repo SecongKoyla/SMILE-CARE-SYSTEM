@@ -1,5 +1,6 @@
 // components/ProfileDropdown.jsx
 import { useState, useRef, useEffect } from "react";
+import "../styles/profile.css";
 
 export default function ProfileDropdown({ user, onNavigateProfile, isAdmin }) {
     const [open, setOpen] = useState(false);
@@ -25,9 +26,9 @@ export default function ProfileDropdown({ user, onNavigateProfile, isAdmin }) {
     const displayName = (user?.name ?? user?.fullName ?? "").trim() || "User";
     const email = user?.email ?? "";
 
-    const handleViewProfile = () => {
+    const handleNavigate = (tab) => {
         setOpen(false);
-        onNavigateProfile();
+        onNavigateProfile?.(tab);
     };
 
     return (
@@ -75,7 +76,7 @@ export default function ProfileDropdown({ user, onNavigateProfile, isAdmin }) {
                     <div className="pd-divider" />
 
                     {/* Actions */}
-                    <button className="pd-item" onClick={handleViewProfile}>
+                    <button className="pd-item" onClick={() => handleNavigate("info")}>
                         <span className="pd-item-icon">👤</span>
                         <div className="pd-item-content">
                             <span className="pd-item-label">View Profile</span>
@@ -84,7 +85,7 @@ export default function ProfileDropdown({ user, onNavigateProfile, isAdmin }) {
                         <span className="pd-item-arrow">›</span>
                     </button>
 
-                    <button className="pd-item" onClick={handleViewProfile}>
+                    <button className="pd-item" onClick={() => handleNavigate("info")}>
                         <span className="pd-item-icon">✏️</span>
                         <div className="pd-item-content">
                             <span className="pd-item-label">Edit Profile</span>
@@ -93,7 +94,7 @@ export default function ProfileDropdown({ user, onNavigateProfile, isAdmin }) {
                         <span className="pd-item-arrow">›</span>
                     </button>
 
-                    <button className="pd-item" onClick={handleViewProfile}>
+                    <button className="pd-item" onClick={() => handleNavigate("password")}>
                         <span className="pd-item-icon">🔒</span>
                         <div className="pd-item-content">
                             <span className="pd-item-label">Change Password</span>
@@ -102,7 +103,7 @@ export default function ProfileDropdown({ user, onNavigateProfile, isAdmin }) {
                         <span className="pd-item-arrow">›</span>
                     </button>
 
-                    <button className="pd-item" onClick={handleViewProfile}>
+                    <button className="pd-item" onClick={() => handleNavigate("photo")}>
                         <span className="pd-item-icon">📷</span>
                         <div className="pd-item-content">
                             <span className="pd-item-label">Upload Photo</span>

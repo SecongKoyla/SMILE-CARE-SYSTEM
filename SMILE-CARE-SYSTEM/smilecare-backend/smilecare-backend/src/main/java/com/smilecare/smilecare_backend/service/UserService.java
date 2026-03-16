@@ -2,6 +2,7 @@ package com.smilecare.smilecare_backend.service;
 
 import com.smilecare.smilecare_backend.model.User;
 import com.smilecare.smilecare_backend.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,10 +12,12 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // Constructor injection
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // Get all users
@@ -45,5 +48,65 @@ public class UserService {
     // Find by email
     public Optional<User> getUserByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    public User updateProfile(Long id, String fullName, String email) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new RuntimeException("Full name is required");
+        }
+
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("Email is required");
+        }
+
+        String normalizedEmail = email.trim();
+        userRepository.findByEmail(normalizedEmail)
+                .filter(existing -> !existing.getId().equals(id))
+                .ifPresent(existing -> {
+                    throw new RuntimeException("Email already exists");
+                });
+
+        user.setFullName(fullName.trim());
+        user.setEmail(normalizedEmail);
+        return userRepository.save(user);
+    }
+
+    public void updatePassword(Long id, String currentPassword, String newPassword) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw new RuntimeException("Current password is required");
+        }
+
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new RuntimeException("New password must be at least 8 characters");
+        }
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    public User updateProfilePhoto(Long id, String profilePhotoUrl) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setProfilePhotoUrl(profilePhotoUrl);
+        return userRepository.save(user);
+    }
+
+    public void removeProfilePhoto(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setProfilePhotoUrl(null);
+        userRepository.save(user);
     }
 }
