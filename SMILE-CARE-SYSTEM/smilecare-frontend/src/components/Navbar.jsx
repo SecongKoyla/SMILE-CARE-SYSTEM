@@ -3,7 +3,7 @@ import { useState } from "react";
 import { PATIENT_NAV, ADMIN_NAV } from "../data/constants.js";
 import ProfileDropdown from "./ProfileDropdown.jsx";
 
-export default function Navbar({ currentPage, setPage, user, onLogout, setUser }) {
+export default function Navbar({ currentPage, setPage, user, onLogout, onOpenProfileTab }) {
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -31,7 +31,8 @@ export default function Navbar({ currentPage, setPage, user, onLogout, setUser }
     onLogout();
   };
 
-  const handleNavigateProfile = () => {
+  const handleNavigateProfile = (tab = "info") => {
+    onOpenProfileTab?.(tab);
     setPage("profile");
     setMenuOpen(false);
   };
@@ -85,7 +86,6 @@ export default function Navbar({ currentPage, setPage, user, onLogout, setUser }
             {/* ── Avatar with dropdown (replaces old static avatar) ── */}
             <ProfileDropdown
                 user={user}
-                setUser={setUser}
                 isAdmin={isAdmin}
                 onNavigateProfile={handleNavigateProfile}
             />
@@ -142,7 +142,7 @@ export default function Navbar({ currentPage, setPage, user, onLogout, setUser }
               {/* Profile link in mobile */}
               <button
                   className={`mobile-menu-link ${currentPage === "profile" ? (isAdmin ? "active-admin" : "active") : ""}`}
-                  onClick={() => handleNav("profile")}
+                  onClick={() => handleNavigateProfile("info")}
               >
                 <span>👤</span>
                 My Profile

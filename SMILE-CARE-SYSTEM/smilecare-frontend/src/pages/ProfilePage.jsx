@@ -1,14 +1,21 @@
 // pages/ProfilePage.jsx
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { API_URL } from "../api/api";
 import "../styles/profile.css";
 
-export default function ProfilePage({ user, setUser, onBack }) {
+export default function ProfilePage({ user, setUser, onBack, initialTab = "info" }) {
 
     const displayName = (user?.name ?? user?.fullName ?? "").trim() || "User";
     const isAdmin = String(user?.role ?? "PATIENT").toUpperCase() === "ADMIN";
 
     // ── Section tabs ──────────────────────────────────────────────
-    const [activeTab, setActiveTab] = useState("info"); // "info" | "password" | "photo"
+    const [activeTab, setActiveTab] = useState(initialTab); // "info" | "password" | "photo"
+
+    useEffect(() => {
+        if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab]);
 
     // ── Edit Profile state ────────────────────────────────────────
     const [profileForm, setProfileForm] = useState({
@@ -42,8 +49,13 @@ export default function ProfilePage({ user, setUser, onBack }) {
         return parts[parts.length - 1].charAt(0).toUpperCase();
     };
 
-    const getToken = () =>
-        localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+    const syncUserState = (updater) => {
+        setUser((prev) => {
+            const next = typeof updater === "function" ? updater(prev) : updater;
+            localStorage.setItem("user", JSON.stringify(next));
+            return next;
+        });
+    };
 
     // ── Edit Profile submit ────────────────────────────────────────
     const handleProfileSave = async (e) => {
@@ -61,11 +73,10 @@ export default function ProfilePage({ user, setUser, onBack }) {
 
         setProfileLoading(true);
         try {
-            const res = await fetch(`/api/users/${user.id}`, {
+            const res = await fetch(`${API_URL}/users/${user.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${getToken()}`,
                 },
                 body: JSON.stringify({
                     fullName: profileForm.fullName.trim(),
@@ -79,7 +90,7 @@ export default function ProfilePage({ user, setUser, onBack }) {
             }
 
             const updated = await res.json();
-            setUser((prev) => ({ ...prev, ...updated }));
+            syncUserState((prev) => ({ ...prev, ...updated }));
             setProfileMsg({ type: "success", text: "Profile updated successfully!" });
         } catch (err) {
             setProfileMsg({ type: "error", text: err.message });
@@ -108,11 +119,10 @@ export default function ProfilePage({ user, setUser, onBack }) {
 
         setPassLoading(true);
         try {
-            const res = await fetch(`/api/users/${user.id}/password`, {
+            const res = await fetch(`${API_URL}/users/${user.id}/password`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${getToken()}`,
                 },
                 body: JSON.stringify({
                     currentPassword: passForm.currentPassword,
@@ -168,9 +178,8 @@ export default function ProfilePage({ user, setUser, onBack }) {
             const formData = new FormData();
             formData.append("photo", photoFile);
 
-            const res = await fetch(`/api/users/${user.id}/photo`, {
+            const res = await fetch(`${API_URL}/users/${user.id}/photo`, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${getToken()}` },
                 body: formData,
             });
 
@@ -181,7 +190,7 @@ export default function ProfilePage({ user, setUser, onBack }) {
 
             const data = await res.json();
             const photoUrl = data.profilePhotoUrl ?? data.photoUrl ?? data.url;
-            setUser((prev) => ({ ...prev, profilePhotoUrl: photoUrl }));
+            syncUserState((prev) => ({ ...prev, profilePhotoUrl: photoUrl }));
             setPhotoMsg({ type: "success", text: "Profile photo updated!" });
             setPhotoFile(null);
         } catch (err) {
@@ -196,13 +205,12 @@ export default function ProfilePage({ user, setUser, onBack }) {
         if (!window.confirm("Remove your profile photo?")) return;
         setPhotoLoading(true);
         try {
-            await fetch(`/api/users/${user.id}/photo`, {
+            await fetch(`${API_URL}/users/${user.id}/photo`, {
                 method: "DELETE",
-                headers: { Authorization: `Bearer ${getToken()}` },
             });
             setPhotoPreview(null);
             setPhotoFile(null);
-            setUser((prev) => ({ ...prev, profilePhotoUrl: null }));
+            syncUserState((prev) => ({ ...prev, profilePhotoUrl: null }));
             setPhotoMsg({ type: "success", text: "Photo removed." });
         } catch {
             setPhotoMsg({ type: "error", text: "Failed to remove photo." });

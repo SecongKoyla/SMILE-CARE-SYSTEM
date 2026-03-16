@@ -19,6 +19,7 @@ import HomePage         from "./pages/HomePage.jsx";
 import AppointmentsPage from "./pages/AppointmentsPage.jsx";
 import BookPage         from "./pages/BookPage.jsx";
 import ServicesPage     from "./pages/ServicesPage.jsx";
+import ProfilePage      from "./pages/ProfilePage.jsx";
 
 // Pages — admin
 import AdminServicesPage from "./pages/AdminServicePage.jsx";
@@ -68,6 +69,7 @@ export default function App() {
   });
 
   const [showRegister, setShowRegister] = useState(false);
+  const [profileTab, setProfileTab] = useState("info");
 
 
   // ─────────────────────────────────────────────
@@ -133,6 +135,10 @@ export default function App() {
     localStorage.removeItem("user");
 
     setPage("home");
+  };
+
+  const handleOpenProfileTab = (tab = "info") => {
+    setProfileTab(tab);
   };
 
 
@@ -225,6 +231,16 @@ export default function App() {
             />
         );
 
+        case "profile":
+        return (
+          <ProfilePage
+            user={user}
+            setUser={setUser}
+            initialTab={profileTab}
+            onBack={() => setPage(user?.role === "ADMIN" ? "admin-services" : "home")}
+          />
+        );
+
 
         // ADMIN
       case "admin-services":
@@ -270,6 +286,7 @@ export default function App() {
             setPage={setPage}
             user={user}
             onLogout={handleLogout}
+          onOpenProfileTab={handleOpenProfileTab}
         />
 
         {renderPage()}

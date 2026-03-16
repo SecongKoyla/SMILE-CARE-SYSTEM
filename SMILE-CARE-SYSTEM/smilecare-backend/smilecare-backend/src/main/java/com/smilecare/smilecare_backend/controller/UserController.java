@@ -2,13 +2,13 @@ package com.smilecare.smilecare_backend.controller;
 
 import com.smilecare.smilecare_backend.model.User;
 import com.smilecare.smilecare_backend.service.UserService;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.ResponseEntity;
-import java.util.Map;
 
+import java.io.IOException;
+import java.util.Base64;
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -22,36 +22,81 @@ public class UserController {
         this.userService = userService;
     }
 
+    private Map<String, Object> toSafeUser(User user) {
+        return Map.of(
+                "id", user.getId(),
+                "name", user.getFullName(),
+                "email", user.getEmail(),
+                "role", user.getRole(),
+                "profilePhotoUrl", user.getProfilePhotoUrl() == null ? "" : user.getProfilePhotoUrl()
+        );
+    }
+
     // GET all users
     @GetMapping
-    public List<User> getAllUsers() {
-        return userService.getAllUsers();
+    public List<Map<String, Object>> getAllUsers() {
+        return userService.getAllUsers().stream().map(this::toSafeUser).toList();
     }
 
     // GET user by ID
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Long id) {
-        return userService.getUserById(id).orElseThrow();
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        return userService.getUserById(id)
+                .<ResponseEntity<?>>map(user -> ResponseEntity.ok(toSafeUser(user)))
+                .orElseGet(() -> ResponseEntity.status(404).body(Map.of("message", "User not found")));
     }
 
-    // POST create new user
-    @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.createUser(user);
-    }
-
-    // PUT update user
+    // PUT update profile info
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody User user) {
-        user.setId(id);
-        return userService.updateUser(user);
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        try {
+            User updated = userService.updateProfile(id, payload.get("fullName"), payload.get("email"));
+            return ResponseEntity.ok(toSafeUser(updated));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
-    // DELETE user
-    @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+    // PUT update password
+    @PutMapping("/{id}/password")
+    public ResponseEntity<?> updatePassword(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        try {
+            userService.updatePassword(id, payload.get("currentPassword"), payload.get("newPassword"));
+            return ResponseEntity.ok(Map.of("message", "Password updated successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
+    // POST profile photo
+    @PostMapping("/{id}/photo")
+    public ResponseEntity<?> uploadPhoto(@PathVariable Long id, @RequestParam("photo") MultipartFile photo) {
+        try {
+            if (photo.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Photo file is required"));
+            }
 
+            String contentType = photo.getContentType() == null ? "image/png" : photo.getContentType();
+            String base64 = Base64.getEncoder().encodeToString(photo.getBytes());
+            String profilePhotoUrl = "data:" + contentType + ";base64," + base64;
+
+            User updated = userService.updateProfilePhoto(id, profilePhotoUrl);
+            return ResponseEntity.ok(Map.of("profilePhotoUrl", updated.getProfilePhotoUrl()));
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body(Map.of("message", "Failed to read uploaded file"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // DELETE profile photo
+    @DeleteMapping("/{id}/photo")
+    public ResponseEntity<?> deletePhoto(@PathVariable Long id) {
+        try {
+            userService.removeProfilePhoto(id);
+            return ResponseEntity.ok(Map.of("message", "Profile photo removed"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }
