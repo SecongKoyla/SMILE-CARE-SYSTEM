@@ -1,7 +1,7 @@
-// App.jsx — Root: auth state, shared state, router
-import { useState } from "react";
+// App.jsx — Root: auth state, shared state, simple router
+import { useState, useEffect } from "react";
 
-// Styles (import order matters)
+// Styles
 import "./styles/tokens.css";
 import "./styles/global.css";
 import "./styles/navbar.css";
@@ -27,91 +27,253 @@ import AdminApptsPage    from "./pages/AdminApptsPage.jsx";
 // Seed data
 import { INITIAL_SERVICES, INITIAL_APPOINTMENTS } from "./data/constants.js";
 
+function normalizeUserPayload(rawUser) {
+  const candidate = rawUser?.user ?? rawUser;
+
+  if (!candidate) return null;
+
+  const resolvedName = (candidate.name ?? candidate.fullName ?? "").trim();
+  const resolvedRole = String(candidate.role ?? "PATIENT").toUpperCase();
+
+  return {
+    ...candidate,
+    name: resolvedName || "User",
+    role: resolvedRole === "ADMIN" ? "ADMIN" : "PATIENT",
+  };
+}
+
+function getPersistedUser() {
+  const savedUser = localStorage.getItem("user");
+  if (!savedUser) return null;
+
+  try {
+    return normalizeUserPayload(JSON.parse(savedUser));
+  } catch {
+    localStorage.removeItem("user");
+    return null;
+  }
+}
+
 export default function App() {
-  // ── Auth ──────────────────────────────────────────────────────────────────
-  const [user,    setUser]    = useState(null);
-  const [page,    setPage]    = useState("home");
+
+  // ─────────────────────────────────────────────
+  // AUTH STATE
+  // ─────────────────────────────────────────────
+  const [user, setUser] = useState(() => getPersistedUser());
+
+  // Router page
+  const [page, setPage] = useState(() => {
+    const persistedUser = getPersistedUser();
+    return persistedUser?.role === "ADMIN" ? "admin-services" : "home";
+  });
+
   const [showRegister, setShowRegister] = useState(false);
 
-  // ── Shared state (lifted so admin + patient both see the same data) ───────
-  const [services,     setServices]     = useState(INITIAL_SERVICES);
-  const [appointments, setAppointments] = useState(INITIAL_APPOINTMENTS);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────
+  // PERSISTED STATE (services + appointments)
+  // ─────────────────────────────────────────────
+  const [services, setServices] = useState(() => {
+    const saved = localStorage.getItem("services");
+    return saved ? JSON.parse(saved) : INITIAL_SERVICES;
+  });
+
+  const [appointments, setAppointments] = useState(() => {
+    const saved = localStorage.getItem("appointments");
+    return saved ? JSON.parse(saved) : INITIAL_APPOINTMENTS;
+  });
+
+  // ─────────────────────────────────────────────
+  // SAVE DATA TO LOCAL STORAGE
+  // ─────────────────────────────────────────────
+  useEffect(() => {
+    localStorage.setItem("services", JSON.stringify(services));
+  }, [services]);
+
+  useEffect(() => {
+    localStorage.setItem("appointments", JSON.stringify(appointments));
+  }, [appointments]);
+
+
+  // ─────────────────────────────────────────────
+  // AUTH HANDLERS
+  // ─────────────────────────────────────────────
   const handleLogin = (u) => {
-    setUser(u);
-    setPage(u.role === "ADMIN" ? "admin-services" : "home");
+    const normalizedUser = normalizeUserPayload(u);
+
+    setUser(normalizedUser);
+    localStorage.setItem("user", JSON.stringify(normalizedUser));
+
+    setPage(
+        normalizedUser?.role === "ADMIN"
+            ? "admin-services"
+            : "home"
+    );
   };
+
 
   const handleRegister = (u) => {
-    setUser(u);
-    setPage(u.role === "ADMIN" ? "admin-services" : "home");
+    const normalizedUser = normalizeUserPayload(u);
+
+    setUser(normalizedUser);
+    localStorage.setItem("user", JSON.stringify(normalizedUser));
+
+    setPage(
+        normalizedUser?.role === "ADMIN"
+            ? "admin-services"
+            : "home"
+    );
   };
 
+
   const handleLogout = () => {
+
     setUser(null);
+
+    localStorage.removeItem("user");
+
     setPage("home");
   };
 
+
+  // ─────────────────────────────────────────────
+  // BOOK APPOINTMENT
+  // ─────────────────────────────────────────────
   const handleBook = ({ type, time }) => {
+
     const newAppt = {
+
       id: Date.now(),
-      day: "20", month: "Mar",   // demo date
+
+      day: "20",
+      month: "Mar",
+
       type,
       doctor: "Dr. Rivera",
       time,
+
       status: "confirmed",
-      patient: user?.fullName ?? "Patient",
+
+      patient: user?.name ?? "Patient",
+
     };
+
     setAppointments(prev => [newAppt, ...prev]);
   };
 
-  // ── Login wall ────────────────────────────────────────────────────────────
+
+  // ─────────────────────────────────────────────
+  // LOGIN WALL
+  // ─────────────────────────────────────────────
   if (!user) {
-    return showRegister 
-      ? <RegisterPage 
-          onRegister={handleRegister} 
-          onSwitchToLogin={() => setShowRegister(false)} 
-        />
-      : <LoginPage 
-          onLogin={handleLogin} 
-          onSwitchToRegister={() => setShowRegister(true)} 
-        />;
+
+    return showRegister
+        ? (
+            <RegisterPage
+                onRegister={handleRegister}
+                onSwitchToLogin={() => setShowRegister(false)}
+            />
+        )
+        : (
+            <LoginPage
+                onLogin={handleLogin}
+                onSwitchToRegister={() => setShowRegister(true)}
+            />
+        );
   }
 
-  // ── Page router ───────────────────────────────────────────────────────────
-  const renderPage = () => {
-    switch (page) {
-      // Patient routes
-      case "home":
-        return <HomePage user={user} appointments={appointments} setPage={setPage} />;
-      case "appointments":
-        return <AppointmentsPage appointments={appointments} setPage={setPage} />;
-      case "book":
-        return <BookPage services={services} setPage={setPage} onBook={handleBook} />;
-      case "services":
-        return <ServicesPage services={services} setPage={setPage} />;
 
-      // Admin routes
+  // ─────────────────────────────────────────────
+  // PAGE ROUTER
+  // ─────────────────────────────────────────────
+  const renderPage = () => {
+
+    switch (page) {
+
+        // PATIENT
+      case "home":
+        return (
+            <HomePage
+                user={user}
+                appointments={appointments}
+                setPage={setPage}
+            />
+        );
+
+      case "appointments":
+        return (
+            <AppointmentsPage
+                appointments={appointments}
+                setPage={setPage}
+            />
+        );
+
+      case "book":
+        return (
+            <BookPage
+                services={services}
+                setPage={setPage}
+                onBook={handleBook}
+            />
+        );
+
+      case "services":
+        return (
+            <ServicesPage
+                services={services}
+                setPage={setPage}
+            />
+        );
+
+
+        // ADMIN
       case "admin-services":
-        return <AdminServicesPage services={services} setServices={setServices} />;
+        return (
+            <AdminServicesPage
+                services={services}
+                setServices={setServices}
+            />
+        );
+
       case "admin-appts":
-        return <AdminApptsPage appointments={appointments} />;
+        return (
+            <AdminApptsPage
+                appointments={appointments}
+            />
+        );
+
 
       default:
-        return <HomePage user={user} appointments={appointments} setPage={setPage} />;
+        return (
+            <HomePage
+                user={user}
+                appointments={appointments}
+                setPage={setPage}
+            />
+        );
     }
   };
 
+
+  // ─────────────────────────────────────────────
+  // APP LAYOUT
+  // ─────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: "var(--gray-light)" }}>
-      <Navbar
-        currentPage={page}
-        setPage={setPage}
-        user={user}
-        onLogout={handleLogout}
-      />
-      {renderPage()}
-    </div>
+
+      <div style={{
+        minHeight: "100vh",
+        background: "var(--gray-light)"
+      }}>
+
+        <Navbar
+            currentPage={page}
+            setPage={setPage}
+            user={user}
+            onLogout={handleLogout}
+        />
+
+        {renderPage()}
+
+      </div>
   );
 }

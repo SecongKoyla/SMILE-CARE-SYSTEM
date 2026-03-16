@@ -2,6 +2,9 @@
 import AppointmentCard from "../components/AppointmentCard.jsx";
 
 export default function HomePage({ user, appointments, setPage }) {
+  const displayName = (user?.name ?? user?.fullName ?? "").trim();
+  const firstName = displayName ? displayName.split(/\s+/)[0] : "User";
+
   const upcoming = appointments
     .filter(a => a.status === "confirmed")
     .slice(0, 2);
@@ -25,23 +28,30 @@ export default function HomePage({ user, appointments, setPage }) {
           🦷
         </div>
         <div>
-          <h2 style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: 28,
-            fontWeight: 500,
-            color: "white",
-            marginBottom: 6,
-          }}>
-            Good morning, <em style={{ fontStyle: "italic", color: "var(--mint)" }}>{user.fullName?.split(" ")[0] || "User"}!</em>
+          <h2
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontSize: 28,
+                fontWeight: 500,
+                color: "white",
+                marginBottom: 6,
+              }}
+          >
+            Good morning,{" "}
+            <em style={{fontStyle: "italic", color: "var(--mint)"}}>
+              {firstName}
+            </em>
+            !
           </h2>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>
+
+          <p style={{fontSize: 13, color: "rgba(255,255,255,0.5)"}}>
             You have {upcoming.length} upcoming appointment{upcoming.length !== 1 ? "s" : ""} this month.
           </p>
         </div>
         <button
-          className="btn-primary"
-          style={{ whiteSpace: "nowrap", position: "relative", zIndex: 1 }}
-          onClick={() => setPage("book")}
+            className="btn-primary"
+            style={{whiteSpace: "nowrap", position: "relative", zIndex: 1}}
+            onClick={() => setPage("book")}
         >
           + Book Appointment
         </button>

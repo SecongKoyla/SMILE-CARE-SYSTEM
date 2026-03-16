@@ -1,9 +1,8 @@
 package com.smilecare.smilecare_backend.controller;
 
+import com.smilecare.smilecare_backend.dto.AuthResponse;
 import com.smilecare.smilecare_backend.dto.LoginRequest;
 import com.smilecare.smilecare_backend.dto.RegisterRequest;
-import com.smilecare.smilecare_backend.model.Role;
-import com.smilecare.smilecare_backend.model.User;
 import com.smilecare.smilecare_backend.repository.UserRepository;
 import com.smilecare.smilecare_backend.service.AuthService;
 
@@ -19,11 +18,11 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthService authService;   // ✅ add this
+    private final AuthService authService;
 
     public AuthController(UserRepository userRepository,
                           PasswordEncoder passwordEncoder,
-                          AuthService authService) {   // ✅ inject service
+                          AuthService authService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -36,7 +35,7 @@ public class AuthController {
 
         try {
 
-            Map<String, Object> response = authService.login(request); // ✅ use object
+            AuthResponse response = authService.login(request);
 
             return ResponseEntity.ok(response);
 
@@ -54,7 +53,7 @@ public class AuthController {
 
         try {
 
-            Map<String, Object> response = authService.register(request);
+            AuthResponse response = authService.register(request);
 
             return ResponseEntity.ok(response);
 
@@ -65,5 +64,4 @@ public class AuthController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
-
 }

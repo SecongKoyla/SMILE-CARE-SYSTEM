@@ -1,7 +1,3 @@
-import { useState } from "react";
-import { register } from "../api/api";
-import { useNavigate, Link } from "react-router-dom";
-
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,500;1,400&display=swap');
 
@@ -211,13 +207,16 @@ const css = `
   .sc-terms a { color: #8ABFB0; text-decoration: none; }
 `;
 
-export default function Register() {
+import { useState } from "react";
+import { register } from "../api/api";
+
+export default function Register({ onRegister, onSwitchToLogin }) {
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState(""); // ✅ confirm password
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
   const filled = [fullName, email, password, confirmPassword].filter(Boolean).length;
 
@@ -225,7 +224,6 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
-    // Frontend password match validation
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -234,98 +232,123 @@ export default function Register() {
     try {
       const res = await register(fullName, email, password, confirmPassword);
 
-      if (res.message) {
-        navigate("/dashboard");
-      } else {
-        setError(res.error || "Registration failed");
-      }
+      onRegister(res?.user ?? res);
+
     } catch (err) {
-      setError(err.message || "Server error. Please try again.");
+      setError(err.message);
     }
   };
 
   return (
-    <>
-      <style>{css}</style>
-      <div className="sc-page">
-        <div className="sc-bg-circle one" />
-        <div className="sc-bg-circle two" />
-        <div className="sc-card">
-          <div className="sc-brand">
-            <div className="sc-brand-icon">🦷</div>
-            <span className="sc-brand-name">Smile<span>Care</span></span>
+      <>
+        <style>{css}</style>
+        <div className="sc-page">
+          <div className="sc-bg-circle one" />
+          <div className="sc-bg-circle two" />
+
+          <div className="sc-card">
+
+            <div className="sc-brand">
+              <div className="sc-brand-icon">🦷</div>
+              <span className="sc-brand-name">
+              Smile<span>Care</span>
+            </span>
+            </div>
+
+            <div className="sc-progress">
+              {[0,1,2,3].map(i => (
+                  <div
+                      key={i}
+                      className={`sc-progress-bar${i < filled ? " filled" : ""}`}
+                  />
+              ))}
+            </div>
+
+            <h1 className="sc-heading">
+              Your <em>smile</em> starts here
+            </h1>
+
+            <p className="sc-sub">
+              Already registered?{" "}
+              <a
+                  href="#"
+                  onClick={(e)=>{
+                    e.preventDefault();
+                    onSwitchToLogin();
+                  }}
+              >
+                Sign in
+              </a>
+            </p>
+
+            <form onSubmit={handleSubmit}>
+
+              <div className="sc-field">
+                <label>Full Name</label>
+                <input
+                    type="text"
+                    placeholder="Jane Smith"
+                    value={fullName}
+                    onChange={(e)=>setFullName(e.target.value)}
+                    autoComplete="name"
+                    required
+                />
+              </div>
+
+              <div className="sc-field">
+                <label>Email</label>
+                <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e)=>setEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                />
+              </div>
+
+              <div className="sc-field">
+                <label>Password</label>
+                <input
+                    type="password"
+                    placeholder="At least 8 characters"
+                    value={password}
+                    onChange={(e)=>setPassword(e.target.value)}
+                    autoComplete="new-password"
+                    required
+                />
+              </div>
+
+              <div className="sc-field">
+                <label>Confirm Password</label>
+                <input
+                    type="password"
+                    placeholder="Re-enter your password"
+                    value={confirmPassword}
+                    onChange={(e)=>setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                    required
+                />
+              </div>
+
+              <button className="sc-btn" type="submit">
+                Create Account →
+              </button>
+
+            </form>
+
+            {error && (
+                <div className="sc-error">
+                  {error}
+                </div>
+            )}
+
+            <p className="sc-terms">
+              By signing up you agree to our <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>
+            </p>
+
           </div>
-
-          <div className="sc-progress">
-            {[0, 1, 2, 3].map(i => (
-              <div key={i} className={`sc-progress-bar${i < filled ? " filled" : ""}`} />
-            ))}
-          </div>
-
-          <h1 className="sc-heading">Your <em>smile</em> starts here</h1>
-          <p className="sc-sub">
-            Already registered? <Link to="/">Sign in</Link>
-          </p>
-
-          <form onSubmit={handleSubmit}>
-            <div className="sc-field">
-              <label>Full Name</label>
-              <input
-                type="text"
-                placeholder="Jane Smith"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                autoComplete="name"
-                required
-              />
-            </div>
-
-            <div className="sc-field">
-              <label>Email</label>
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-              />
-            </div>
-
-            <div className="sc-field">
-              <label>Password</label>
-              <input
-                type="password"
-                placeholder="At least 8 characters"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoComplete="new-password"
-                required
-              />
-            </div>
-
-            <div className="sc-field">
-              <label>Confirm Password</label>
-              <input
-                type="password"
-                placeholder="Re-enter your password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-                required
-              />
-            </div>
-
-            <button type="submit" className="sc-btn">Create Account →</button>
-          </form>
-
-          {error && <div className="sc-error">{error}</div>}
-
-          <p className="sc-terms">
-            By signing up you agree to our <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>
-          </p>
         </div>
-      </div>
-    </>
+      </>
   );
 }

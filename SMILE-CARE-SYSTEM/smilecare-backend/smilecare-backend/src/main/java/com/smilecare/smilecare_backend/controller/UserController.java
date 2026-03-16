@@ -3,6 +3,11 @@ package com.smilecare.smilecare_backend.controller;
 import com.smilecare.smilecare_backend.model.User;
 import com.smilecare.smilecare_backend.service.UserService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
 
 import java.util.List;
 
@@ -47,4 +52,6 @@ public class UserController {
     public void deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
     }
+
+
 }

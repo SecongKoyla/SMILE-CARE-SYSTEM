@@ -3,16 +3,13 @@ package com.smilecare.smilecare_backend.service;
 import com.smilecare.smilecare_backend.model.Role;
 import com.smilecare.smilecare_backend.model.User;
 import com.smilecare.smilecare_backend.repository.UserRepository;
-import com.smilecare.smilecare_backend.dto.LoginRequest;
-import com.smilecare.smilecare_backend.dto.RegisterRequest;
+import com.smilecare.smilecare_backend.dto.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -25,7 +22,7 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     // ===================== LOGIN =====================
-    public Map<String, Object> login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request) {
 
         if (request == null) {
             throw new RuntimeException("Login request is missing");
@@ -37,6 +34,7 @@ public class AuthService {
         if (email == null || email.trim().isEmpty()) {
             throw new RuntimeException("Email is required");
         }
+
         if (password == null || password.trim().isEmpty()) {
             throw new RuntimeException("Password is required");
         }
@@ -55,23 +53,22 @@ public class AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("id", user.getId());
-        response.put("email", user.getEmail());
-        response.put("name", user.getFullName());
-        response.put("role", user.getRole());
-        response.put("message", "Login successful");
+        UserResponse userResponse = new UserResponse(
+                user.getId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getRole()
+        );
 
-        return response;
+        return new AuthResponse("Login successful", userResponse);
     }
+
 
     // ===================== REGISTER =====================
 
-
     @Transactional(rollbackFor = Exception.class)
-    public Map<String, Object> register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request) {
 
-        // 1️⃣ Validate request BEFORE touching DB
         if (request == null) {
             throw new RuntimeException("Registration request is missing");
         }
@@ -88,6 +85,7 @@ public class AuthService {
         if (email == null || email.trim().isEmpty()) {
             throw new RuntimeException("Email is required");
         }
+
         email = email.trim();
 
         if (password == null || password.trim().isEmpty()) {
@@ -106,12 +104,10 @@ public class AuthService {
             throw new RuntimeException("Passwords do not match");
         }
 
-        // 2️⃣ Only now query DB for email existence
         if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
-        // 3️⃣ Create and save user
         User newUser = new User();
         newUser.setFullName(fullName.trim());
         newUser.setEmail(email);
@@ -120,13 +116,13 @@ public class AuthService {
 
         userRepository.save(newUser);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Registration successful");
-        response.put("id", newUser.getId());
-        response.put("email", newUser.getEmail());
-        response.put("name", newUser.getFullName());
-        response.put("role", newUser.getRole());
+        UserResponse userResponse = new UserResponse(
+                newUser.getId(),
+                newUser.getFullName(),
+                newUser.getEmail(),
+                newUser.getRole()
+        );
 
-        return response;
+        return new AuthResponse("Registration successful", userResponse);
     }
 }

@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { login } from "../api/api";
 
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,500;1,400&display=swap');
@@ -202,6 +200,8 @@ const css = `
     display: inline-block;
   }
 `;
+import { useState } from "react";
+import { login } from "../api/api";
 
 export default function Login({ onLogin, onSwitchToRegister }) {
   const [email, setEmail] = useState("");
@@ -213,9 +213,14 @@ export default function Login({ onLogin, onSwitchToRegister }) {
         setError(""); // clear previous errors
 
         try {
-            const user = await login(email, password); // will throw if login fails
-            console.log("Logged in user:", user);
-            onLogin(user); // call parent handler to set user state
+        const response = await login(email.trim(), password);
+        const loggedInUser = response?.user ?? response;
+
+        if (!loggedInUser) {
+          throw new Error("Invalid login response from server");
+        }
+
+        onLogin(loggedInUser);
         } catch (err) {
             setError(err.message); // show the backend error message
         }
