@@ -20,7 +20,6 @@ export default function ProfilePage({ user, setUser, onBack, initialTab = "info"
     // ── Edit Profile state ────────────────────────────────────────
     const [profileForm, setProfileForm] = useState({
         fullName: displayName,
-        email: user?.email ?? "",
     });
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileMsg, setProfileMsg]   = useState(null); // { type: "success"|"error", text }
@@ -66,8 +65,12 @@ export default function ProfilePage({ user, setUser, onBack, initialTab = "info"
             setProfileMsg({ type: "error", text: "Full name is required." });
             return;
         }
-        if (!profileForm.email.trim() || !/\S+@\S+\.\S+/.test(profileForm.email)) {
-            setProfileMsg({ type: "error", text: "Please enter a valid email address." });
+
+        const normalizedFullName = profileForm.fullName.trim().replace(/\s+/g, " ");
+        const fullNamePattern = /^[\p{L}\s]+$/u;
+
+        if (!fullNamePattern.test(normalizedFullName)) {
+            setProfileMsg({ type: "error", text: "Full name can only contain letters and spaces." });
             return;
         }
 
@@ -79,8 +82,7 @@ export default function ProfilePage({ user, setUser, onBack, initialTab = "info"
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    fullName: profileForm.fullName.trim(),
-                    email:    profileForm.email.trim(),
+                    fullName: normalizedFullName,
                 }),
             });
 
@@ -323,20 +325,10 @@ export default function ProfilePage({ user, setUser, onBack, initialTab = "info"
                                 <div className="form-group">
                                     <label className="form-label">Email Address</label>
                                     <input
-                                        className="form-input"
-                                        type="email"
-                                        value={profileForm.email}
-                                        onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
-                                        placeholder="your@email.com"
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Role</label>
-                                    <input
                                         className="form-input form-input-readonly"
-                                        type="text"
-                                        value={isAdmin ? "Administrator" : "Patient"}
+                                        type="email"
+                                        value={user?.email ?? ""}
+                                        placeholder="your@email.com"
                                         readOnly
                                     />
                                 </div>

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.List;
 
@@ -23,13 +24,13 @@ public class UserController {
     }
 
     private Map<String, Object> toSafeUser(User user) {
-        return Map.of(
-                "id", user.getId(),
-                "name", user.getFullName(),
-                "email", user.getEmail(),
-                "role", user.getRole(),
-                "profilePhotoUrl", user.getProfilePhotoUrl() == null ? "" : user.getProfilePhotoUrl()
-        );
+        Map<String, Object> safeUser = new LinkedHashMap<>();
+        safeUser.put("id", user.getId());
+        safeUser.put("name", user.getFullName());
+        safeUser.put("email", user.getEmail());
+        safeUser.put("role", user.getRole() == null ? "PATIENT" : user.getRole().name());
+        safeUser.put("profilePhotoUrl", user.getProfilePhotoUrl());
+        return safeUser;
     }
 
     // GET all users
@@ -50,7 +51,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         try {
-            User updated = userService.updateProfile(id, payload.get("fullName"), payload.get("email"));
+            User updated = userService.updateProfile(id, payload.get("fullName"));
             return ResponseEntity.ok(toSafeUser(updated));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

@@ -7,9 +7,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 public class UserService {
+
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}\\s]+$");
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -50,7 +53,7 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
-    public User updateProfile(Long id, String fullName, String email) {
+    public User updateProfile(Long id, String fullName) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -58,19 +61,12 @@ public class UserService {
             throw new RuntimeException("Full name is required");
         }
 
-        if (email == null || email.trim().isEmpty()) {
-            throw new RuntimeException("Email is required");
+        String normalizedName = fullName.trim().replaceAll("\\s+", " ");
+        if (!NAME_PATTERN.matcher(normalizedName).matches()) {
+            throw new RuntimeException("Full name can only contain letters and spaces");
         }
 
-        String normalizedEmail = email.trim();
-        userRepository.findByEmail(normalizedEmail)
-                .filter(existing -> !existing.getId().equals(id))
-                .ifPresent(existing -> {
-                    throw new RuntimeException("Email already exists");
-                });
-
-        user.setFullName(fullName.trim());
-        user.setEmail(normalizedEmail);
+        user.setFullName(normalizedName);
         return userRepository.save(user);
     }
 
