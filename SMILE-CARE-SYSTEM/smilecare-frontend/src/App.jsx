@@ -35,11 +35,13 @@ function normalizeUserPayload(rawUser) {
 
   const resolvedName = (candidate.name ?? candidate.fullName ?? "").trim();
   const resolvedRole = String(candidate.role ?? "PATIENT").toUpperCase();
+  const resolvedPhoto = candidate.profilePhotoUrl ?? candidate.profile_photo_url ?? null;
 
   return {
     ...candidate,
     name: resolvedName || "User",
     role: resolvedRole === "ADMIN" ? "ADMIN" : "PATIENT",
+    profilePhotoUrl: resolvedPhoto,
   };
 }
 

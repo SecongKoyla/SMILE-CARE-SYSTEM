@@ -20,13 +20,19 @@ public class User {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
+    // ✅ FIXED: removed columnDefinition + added proper column name + lazy loading
     @Lob
-    @Column(name = "profile_photo_url", columnDefinition = "TEXT")
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "profile_photo_url")
     private String profilePhotoUrl;
 
+    // ✅ FIXED: explicitly mapped enum
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 
+    // ✅ MATCHES DB: created_at
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public User() {}
@@ -35,6 +41,8 @@ public class User {
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    // ================= GETTERS & SETTERS =================
 
     public Long getId() {
         return id;
@@ -91,5 +99,4 @@ public class User {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-// Getters and Setters
 }

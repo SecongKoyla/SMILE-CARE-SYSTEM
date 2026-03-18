@@ -85,15 +85,6 @@ export default function ProfileDropdown({ user, onNavigateProfile, isAdmin }) {
                         <span className="pd-item-arrow">›</span>
                     </button>
 
-                    <button className="pd-item" onClick={() => handleNavigate("info")}>
-                        <span className="pd-item-icon">✏️</span>
-                        <div className="pd-item-content">
-                            <span className="pd-item-label">Edit Profile</span>
-                            <span className="pd-item-sub">Update your information</span>
-                        </div>
-                        <span className="pd-item-arrow">›</span>
-                    </button>
-
                     <button className="pd-item" onClick={() => handleNavigate("password")}>
                         <span className="pd-item-icon">🔒</span>
                         <div className="pd-item-content">
