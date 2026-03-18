@@ -26,7 +26,7 @@ public class UserController {
     private Map<String, Object> toSafeUser(User user) {
         Map<String, Object> safeUser = new LinkedHashMap<>();
         safeUser.put("id", user.getId());
-        safeUser.put("name", user.getFullName());
+        safeUser.put("fullName", user.getFullName());
         safeUser.put("email", user.getEmail());
         safeUser.put("role", user.getRole() == null ? "PATIENT" : user.getRole().name());
         safeUser.put("profilePhotoUrl", user.getProfilePhotoUrl());

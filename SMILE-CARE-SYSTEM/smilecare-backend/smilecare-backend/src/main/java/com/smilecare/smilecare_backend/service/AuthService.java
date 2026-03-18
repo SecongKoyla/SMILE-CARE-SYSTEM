@@ -22,6 +22,7 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     // ===================== LOGIN =====================
+    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
 
         if (request == null) {
@@ -57,7 +58,8 @@ public class AuthService {
                 user.getId(),
                 user.getFullName(),
                 user.getEmail(),
-                user.getRole()
+            user.getRole(),
+            user.getProfilePhotoUrl()
         );
 
         return new AuthResponse("Login successful", userResponse);
@@ -120,7 +122,8 @@ public class AuthService {
                 newUser.getId(),
                 newUser.getFullName(),
                 newUser.getEmail(),
-                newUser.getRole()
+            newUser.getRole(),
+            newUser.getProfilePhotoUrl()
         );
 
         return new AuthResponse("Registration successful", userResponse);
