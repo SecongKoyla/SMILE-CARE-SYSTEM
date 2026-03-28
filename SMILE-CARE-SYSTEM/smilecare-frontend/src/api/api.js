@@ -1,4 +1,4 @@
-export const API_URL = "http://localhost:8080/api/v1";
+export const API_URL = "http://localhost:8085/api/v1";
 
 /**
  * Login a user
@@ -37,7 +37,7 @@ export async function login(email, password) {
  */
 export async function register(fullName, email, password, confirmPassword) {
   try {
-    const response = await fetch("http://localhost:8080/api/v1/register", {
+    const response = await fetch("http://localhost:8085/api/v1/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

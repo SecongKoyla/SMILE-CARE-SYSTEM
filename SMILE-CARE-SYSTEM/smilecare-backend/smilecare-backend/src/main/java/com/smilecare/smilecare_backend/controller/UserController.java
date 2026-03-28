@@ -72,20 +72,47 @@ public class UserController {
 
     // ✅ Upload photo as BLOB
     @PostMapping("/{id}/photo")
-    public ResponseEntity<?> uploadPhoto(@PathVariable Long id, @RequestParam("photo") MultipartFile photo) {
+    public ResponseEntity<?> uploadPhoto(
+            @PathVariable Long id,
+            @RequestParam("photo") MultipartFile photo
+    ) {
         try {
             if (photo.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Photo file is required"));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Photo file is required"));
             }
 
-            byte[] bytes = photo.getBytes(); // store raw bytes
+            // ✅ Validate file type
+            String contentType = photo.getContentType();
+            if (contentType == null ||
+                    !(contentType.equals("image/jpeg") || contentType.equals("image/png"))) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Only JPG and PNG are allowed"));
+            }
+
+            // ✅ Convert to bytes (BLOB)
+            byte[] bytes = photo.getBytes();
+
+            // ✅ Save to DB
             User updated = userService.updateProfilePhoto(id, bytes);
 
-            return ResponseEntity.ok(Map.of("message", "Photo uploaded successfully"));
-        } catch (IOException e) {
-            return ResponseEntity.status(500).body(Map.of("message", "Failed to read uploaded file"));
+            // ✅ Convert to Base64 (file reference)
+            String base64 = Base64.getEncoder().encodeToString(updated.getProfilePhoto());
+            String fileRef = "data:" + contentType + ";base64," + base64;
+
+            // ✅ Return success + reference
+            return ResponseEntity.ok(Map.of(
+                    "message", "Photo uploaded successfully",
+                    "profilePhotoUrl", fileRef
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace(); // 🔥 for debugging
+            return ResponseEntity.status(500)
+                    .body(Map.of("message", "Upload failed: " + e.getMessage()));
         }
     }
+
 
 
     @DeleteMapping("/{id}/photo")

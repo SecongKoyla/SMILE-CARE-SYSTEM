@@ -22,10 +22,8 @@ public class User {
 
     // ✅ Store image as BLOB (BYTEA)
 // BLOB storage with proper BYTEA mapping
-    @Lob
     @Column(name = "profile_photo", columnDefinition = "BYTEA")
     private byte[] profilePhoto;
-
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
