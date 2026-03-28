@@ -59,7 +59,7 @@ public class AuthService {
                 user.getFullName(),
                 user.getEmail(),
             user.getRole(),
-            user.getProfilePhotoUrl()
+            user.getProfilePhoto()
         );
 
         return new AuthResponse("Login successful", userResponse);
@@ -123,7 +123,7 @@ public class AuthService {
                 newUser.getFullName(),
                 newUser.getEmail(),
             newUser.getRole(),
-            newUser.getProfilePhotoUrl()
+            newUser.getProfilePhoto()
         );
 
         return new AuthResponse("Registration successful", userResponse);
