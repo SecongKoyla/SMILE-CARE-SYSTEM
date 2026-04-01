@@ -1,0 +1,55 @@
+/* ── Appointment row ── */
+.appt-list { display: flex; flex-direction: column; gap: 10px; }
+
+.appt {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--gray-light);
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.appt:hover { background: var(--mint-light); }
+
+.appt-date { width: 44px; text-align: center; flex-shrink: 0; }
+.appt-day {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--navy);
+  line-height: 1;
+}
+.appt-month {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray);
+}
+.appt-divider { width: 1px; height: 36px; background: #E5EAED; flex-shrink: 0; }
+
+.appt-info { flex: 1; min-width: 0; }
+.appt-type   { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
+.appt-doctor { font-size: 12px; color: var(--gray); }
+
+.appt-time {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mint);
+  white-space: nowrap;
+  background: var(--mint-light);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* ── Filter row ── */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.filter-row-right { margin-left: auto; }

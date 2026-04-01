@@ -178,9 +178,9 @@ export default function ProfilePage({ user, setUser, onBack, initialTab = "info"
         setPhotoMsg(null);
         try {
             const formData = new FormData();
-            formData.append("photo", photoFile);
+            formData.append("file", photoFile);
 
-            const res = await fetch(`${API_URL}/users/${user.id}/photo`, {
+            const res = await fetch(`${API_URL}/users/${user.id}/profile-photo`, {
                 method: "POST",
                 body: formData,
             });
@@ -207,7 +207,7 @@ export default function ProfilePage({ user, setUser, onBack, initialTab = "info"
         if (!window.confirm("Remove your profile photo?")) return;
         setPhotoLoading(true);
         try {
-            await fetch(`${API_URL}/users/${user.id}/photo`, {
+            await fetch(`${API_URL}/users/${user.id}/profile-photo`, {
                 method: "DELETE",
             });
             setPhotoPreview(null);
