@@ -24,6 +24,7 @@ import ProfilePage      from "./pages/ProfilePage.jsx";
 // Pages — admin
 import AdminServicesPage from "./pages/AdminServicePage.jsx";
 import AdminApptsPage    from "./pages/AdminApptsPage.jsx";
+import AdminAvailabilityPage from "./pages/AdminAvailabilityPage.jsx";
 
 // API
 import { getServices, getUserAppointments } from "./api/api.js";
@@ -107,12 +108,19 @@ export default function App() {
   useEffect(() => {
     const fetchServicesFromBackend = async () => {
       try {
+        console.log("🔄 Fetching services from backend...");
         const backendServices = await getServices();
+        console.log("✅ Services received:", backendServices);
+        console.log("📊 Service count:", backendServices?.length || 0);
+        
         if (backendServices && backendServices.length > 0) {
+          console.log("✓ Setting services from backend");
           setServices(backendServices);
+        } else {
+          console.warn("⚠️ No services from backend, using defaults");
         }
       } catch (err) {
-        console.error("Failed to fetch services from backend, using defaults");
+        console.error("❌ Failed to fetch services from backend:", err);
         // Keep using localStorage saved services or INITIAL_SERVICES
       }
     };
@@ -304,6 +312,10 @@ export default function App() {
             <AdminApptsPage />
         );
 
+      case "admin-availability":
+        return (
+            <AdminAvailabilityPage />
+        );
 
       default:
         return (

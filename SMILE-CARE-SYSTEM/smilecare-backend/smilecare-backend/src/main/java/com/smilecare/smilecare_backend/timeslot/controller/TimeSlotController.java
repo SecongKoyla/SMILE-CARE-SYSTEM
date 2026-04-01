@@ -1,6 +1,6 @@
 package com.smilecare.smilecare_backend.timeslot.controller;
 
-import com.smilecare.smilecare_backend.timeslot.model.TimeSlot;
+import com.smilecare.smilecare_backend.timeslot.dto.TimeSlotDTO;
 import com.smilecare.smilecare_backend.timeslot.service.TimeSlotService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,12 +17,15 @@ public class TimeSlotController {
     }
 
     @GetMapping("/available")
-    public List<TimeSlot> getAvailableTimeSlots() {
+    public List<TimeSlotDTO> getAvailableTimeSlots(@RequestParam(required = false) Long serviceId) {
+        if (serviceId != null) {
+            return service.getAvailableTimeSlotsByService(serviceId);
+        }
         return service.getAvailableTimeSlots();
     }
 
     @GetMapping
-    public List<TimeSlot> getAllTimeSlots() {
+    public List<TimeSlotDTO> getAllTimeSlots() {
         return service.getAllTimeSlots();
     }
 }

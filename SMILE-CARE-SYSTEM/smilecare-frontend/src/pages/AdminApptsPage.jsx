@@ -104,16 +104,19 @@ export default function AdminApptsPage() {
   return (
     <main className="sc-main page-enter">
       <div className="page-header">
-        <h1>All Appointments</h1>
-        <p>Overview of all patient appointments across the clinic</p>
+        <div>
+          <h1>All Appointments</h1>
+          <p>Manage and track all patient appointments across the clinic</p>
+        </div>
       </div>
 
       {/* Summary stats */}
-      <div className="stats" style={{ marginBottom: 20 }}>
+      <div className="stats">
         {[
           { icon: "📅", label: "Total",     value: appointments.length },
           { icon: "✅", label: "Confirmed", value: counts.confirmed },
           { icon: "⏳", label: "Pending",   value: counts.pending },
+          { icon: "❌", label: "Cancelled", value: displayAppointments.filter(a => a.status === "cancelled").length },
         ].map(s => (
           <div key={s.label} className="stat">
             <div className="stat-icon">{s.icon}</div>
@@ -126,14 +129,19 @@ export default function AdminApptsPage() {
       </div>
 
       {/* Filters */}
-      <div className="filter-row" style={{ marginBottom: 16 }}>
+      <div className="filter-row">
         {FILTERS.map(f => (
           <button
             key={f}
             className={`pill${filter === f ? " active" : ""}`}
             onClick={() => setFilter(f)}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {f.charAt(0).toUpperCase() + f.slice(1)} 
+            {f !== "all" && ` (${
+              f === "approved" ? counts.confirmed : 
+              f === "pending" ? counts.pending : 
+              displayAppointments.filter(a => a.status === f).length
+            })`}
           </button>
         ))}
       </div>
@@ -147,26 +155,34 @@ export default function AdminApptsPage() {
             </div>
           ) : filtered.map(a => (
             <div key={a.id} className="appt-admin-item">
-              <AppointmentCard appt={a} showStatus showPatient />
-              <div className="appt-admin-details">
-                <span className="patient-email">📧 {a.patientEmail}</span>
+              <div>
+                <AppointmentCard appt={a} showStatus showPatient />
+                <div className="appt-admin-details" style={{ marginTop: "10px" }}>
+                  <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--navy)" }}>
+                    {a.patient}
+                  </div>
+                  <div className="patient-email">{a.patientEmail}</div>
+                </div>
               </div>
               <div className="appt-admin-actions">
                 <button
-                  className={`status-action ${a.status === "confirmed" ? "active" : ""}`}
+                  className={`status-action${a.status === "confirmed" ? " active" : ""}`}
                   onClick={() => handleStatusChange(a.id, "APPROVED")}
+                  title="Confirm appointment"
                 >
                   ✓ Confirm
                 </button>
                 <button
-                  className={`status-action ${a.status === "pending" ? "active" : ""}`}
+                  className={`status-action${a.status === "pending" ? " active" : ""}`}
                   onClick={() => handleStatusChange(a.id, "PENDING")}
+                  title="Mark as pending"
                 >
                   ⏳ Pending
                 </button>
                 <button
-                  className={`status-action ${a.status === "cancelled" ? "active" : ""}`}
+                  className={`status-action${a.status === "cancelled" ? " active" : ""}`}
                   onClick={() => handleStatusChange(a.id, "CANCELLED")}
+                  title="Cancel appointment"
                 >
                   ✕ Cancel
                 </button>

@@ -1,7 +1,6 @@
 package com.smilecare.smilecare_backend.dentalservice.model;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,11 +16,11 @@ public class DentalService {
 
     private String description;
 
-    @Column(nullable = false)
-    private BigDecimal price;
+    private String price;  // e.g., "$75"
 
-    @Column(nullable = false)
-    private Integer duration; // in minutes
+    private String duration;  // e.g., "30 min"
+
+    private String icon;  // e.g., "🪥"
 
     private LocalDateTime createdAt;
 
@@ -42,11 +41,14 @@ public class DentalService {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
+    public String getPrice() { return price; }
+    public void setPrice(String price) { this.price = price; }
 
-    public Integer getDuration() { return duration; }
-    public void setDuration(Integer duration) { this.duration = duration; }
+    public String getDuration() { return duration; }
+    public void setDuration(String duration) { this.duration = duration; }
+
+    public String getIcon() { return icon; }
+    public void setIcon(String icon) { this.icon = icon; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

@@ -40,15 +40,26 @@ public class AppointmentService {
     }
 
     public Appointment bookAppointment(AppointmentRequest request) {
+        System.out.println("\n📅 BOOKING APPOINTMENT");
+        System.out.println("   Patient ID: " + request.getPatientId());
+        System.out.println("   Service ID: " + request.getServiceId());
+        System.out.println("   TimeSlot ID: " + request.getTimeSlotId());
 
         User patient = userRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
+        System.out.println("   ✓ Patient found: " + patient.getFullName());
 
         DentalService service = dentalServiceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new RuntimeException("Service not found"));
+        System.out.println("   ✓ Service found: " + service.getName());
 
         TimeSlot timeSlot = timeSlotRepository.findById(request.getTimeSlotId())
                 .orElseThrow(() -> new RuntimeException("Time slot not found"));
+        System.out.println("   ✓ TimeSlot found: " + timeSlot.getDate() + " " + timeSlot.getStartTime());
+
+        if (timeSlot.getService() == null) {
+            throw new RuntimeException("Time slot has no associated service");
+        }
 
         // 🔴 BUSINESS RULE 1: Prevent booking if already booked
         if (timeSlot.getStatus() == TimeSlotStatus.BOOKED) {
@@ -64,8 +75,12 @@ public class AppointmentService {
         // 🔵 BUSINESS RULE 2: Mark time slot as booked
         timeSlot.setStatus(TimeSlotStatus.BOOKED);
         timeSlotRepository.save(timeSlot);
+        System.out.println("   ✓ TimeSlot marked as BOOKED");
 
-        return appointmentRepository.save(appointment);
+        Appointment saved = appointmentRepository.save(appointment);
+        System.out.println("   ✓ Appointment created successfully (ID: " + saved.getId() + ")\n");
+        
+        return saved;
     }
 
     public Appointment approveAppointment(Long appointmentId, Long adminId) {

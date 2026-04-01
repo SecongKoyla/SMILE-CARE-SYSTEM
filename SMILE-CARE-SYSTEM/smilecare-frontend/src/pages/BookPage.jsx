@@ -1,29 +1,68 @@
 // pages/BookPage.jsx
 import { useState, useEffect } from "react";
-import { getAvailableTimeSlots, bookAppointment, getUserAppointments } from "../api/api.js";
+import { getAvailableTimeSlots, bookAppointment, getUserAppointments, getClinicHours } from "../api/api.js";
+import BookingCalendar from "../components/BookingCalendar.jsx";
 
 export default function BookPage({ services, user, setPage, onBook }) {
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [timeSlots, setTimeSlots] = useState([]);
+  const [clinicHours, setClinicHours] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  // Fetch available time slots on mount
+  // Fetch clinic hours on mount
   useEffect(() => {
-    fetchTimeSlots();
+    const loadClinicHours = async () => {
+      try {
+        const hours = await getClinicHours();
+        setClinicHours(hours || []);
+      } catch (err) {
+        console.error("Error loading clinic hours:", err);
+      }
+    };
+    loadClinicHours();
   }, []);
 
+  // Fetch time slots when a service is selected
+  useEffect(() => {
+    if (selectedIdx !== null) {
+      fetchTimeSlots();
+    }
+  }, [selectedIdx]);
+
   const fetchTimeSlots = async () => {
+    if (selectedIdx === null) return;
+    
     try {
       setError(null);
-      const slots = await getAvailableTimeSlots();
-      setTimeSlots(slots);
+      const selectedService = services[selectedIdx];
+      console.log("📅 Fetching slots for service:", selectedService);
+      
+      if (!selectedService?.id) {
+        setError("Invalid service selected");
+        return;
+      }
+      
+      const slots = await getAvailableTimeSlots(selectedService.id);
+      console.log("📅 Received slots:", slots);
+      console.log("📅 Slot count:", slots?.length || 0);
+      
+      if (!slots || slots.length === 0) {
+        console.warn("⚠️ No slots received from backend");
+        setTimeSlots([]);
+        setError("No available time slots for this service yet.");
+      } else {
+        setTimeSlots(slots);
+        console.log("✅ TimeSlots set successfully");
+      }
     } catch (err) {
-      console.error("Error fetching time slots:", err);
-      setError("Could not load available time slots. Please try again.");
+      console.error("❌ Error fetching time slots:", err);
+      setTimeSlots([]);
+      setError(err.message || "Could not load available time slots. Please try again.");
     }
   };
 
@@ -139,41 +178,24 @@ export default function BookPage({ services, user, setPage, onBook }) {
         )}
       </div>
 
-      {/* Step 2: Time Slot */}
+      {/* Step 2: Calendar & Time Slot */}
       {selectedIdx !== null && (
         <div className="card fade-in" style={{ marginBottom: 14 }}>
           <div className="card-title">
-            <span>Step 2 — Choose a Time Slot</span>
-            {timeSlots.length === 0 && (
-              <span style={{ color: "var(--gray)", fontSize: 11, fontWeight: 400 }}>
-                No slots available
-              </span>
-            )}
+            <span>Step 2 — Choose a Date and Time</span>
           </div>
-          {timeSlots.length === 0 ? (
-            <div className="empty-state">
+          <BookingCalendar
+            timeSlots={timeSlots}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            selectedSlotId={selectedTimeSlotId}
+            setSelectedSlotId={setSelectedTimeSlotId}
+            clinicHours={clinicHours}
+          />
+          {timeSlots.length === 0 && selectedDate && (
+            <div className="empty-state" style={{ marginTop: "16px" }}>
               <span className="empty-icon">📅</span>
-              <p>No available time slots at the moment.<br />Please check back later.</p>
-              <button className="btn-primary" onClick={fetchTimeSlots}>
-                Refresh
-              </button>
-            </div>
-          ) : (
-            <div className="time-slots">
-              {timeSlots.map(t => (
-                <div
-                  key={t.id}
-                  className={`time-slot${selectedTimeSlotId === t.id ? " selected" : ""}`}
-                  onClick={() => setSelectedTimeSlotId(t.id)}
-                  title={`${new Date(t.date).toLocaleDateString()} at ${t.startTime}`}
-                  style={{ cursor: "pointer" }}
-                >
-                  <div>{t.startTime}</div>
-                  <div style={{ fontSize: "11px", color: "var(--gray)", marginTop: "2px" }}>
-                    {new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </div>
-                </div>
-              ))}
+              <p>No available time slots for this date.<br />Please select another date.</p>
             </div>
           )}
         </div>

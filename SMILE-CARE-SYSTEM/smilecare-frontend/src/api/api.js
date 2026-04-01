@@ -148,8 +148,9 @@ export async function updateAppointmentStatus(appointmentId, status) {
 
 /**
  * Get available time slots
+ * @param {number} serviceId - Optional: filter by service ID
  */
-export async function getAvailableTimeSlots() {
+export async function getAvailableTimeSlots(serviceId) {
   try {
     const headers = { "Content-Type": "application/json" };
     const token = localStorage.getItem("accessToken");
@@ -157,17 +158,31 @@ export async function getAvailableTimeSlots() {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const res = await fetch(`${API_URL}/time-slots/available`, {
+    let url = `${API_URL}/time-slots/available`;
+    if (serviceId) {
+      url += `?serviceId=${serviceId}`;
+    }
+
+    console.log("🔍 Fetching from URL:", url);
+    
+    const res = await fetch(url, {
       method: "GET",
       headers: headers
     });
 
+    console.log("📡 Response status:", res.status);
+
     if (!res.ok) {
-      throw new Error(`Failed to fetch time slots (${res.status})`);
+      const errorText = await res.text();
+      console.error("❌ API Error:", res.status, errorText);
+      throw new Error(`Failed to fetch time slots (${res.status}): ${errorText}`);
     }
 
-    return await res.json();
+    const data = await res.json();
+    console.log("✅ Time slots received:", data);
+    return data;
   } catch (err) {
+    console.error("❌ Network/Parse error:", err);
     throw new Error(err.message || "Network error");
   }
 }
@@ -217,18 +232,95 @@ export async function getServices() {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const res = await fetch(`${API_URL}/services`, {
+    const url = `${API_URL}/services`;
+    console.log("🔍 Fetching services from:", url);
+    
+    const res = await fetch(url, {
+      method: "GET",
+      headers: headers
+    });
+
+    console.log("📡 Services response status:", res.status);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ Error:", res.status, errorText);
+      throw new Error(`Failed to fetch services (${res.status})`);
+    }
+
+    const data = await res.json();
+    console.log("✅ Services data:", data);
+    return data;
+  } catch (err) {
+    console.error("❌ Error fetching services:", err);
+    return []; // Return empty array if fetch fails
+  }
+}
+
+/**
+ * Get all clinic hours (admin availability config)
+ * @returns {Promise<Array>} list of clinic hours for each day
+ */
+export async function getClinicHours() {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const url = `${API_URL}/clinic-hours`;
+    console.log("🔍 Fetching clinic hours from:", url);
+    
+    const res = await fetch(url, {
       method: "GET",
       headers: headers
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch services (${res.status})`);
+      throw new Error(`Failed to fetch clinic hours (${res.status})`);
     }
 
-    return await res.json();
+    const data = await res.json();
+    console.log("✅ Clinic hours:", data);
+    return data;
   } catch (err) {
-    console.error("Error fetching services:", err);
-    return []; // Return empty array if fetch fails
+    console.error("❌ Error fetching clinic hours:", err);
+    return [];
+  }
+}
+
+/**
+ * Update clinic hours for a specific day
+ * @param {number} dayOfWeek - 0-6 (Monday-Sunday)
+ * @param {Object} config - {isOperating, morningStart, morningEnd, afternoonStart, afternoonEnd}
+ */
+export async function updateClinicHours(dayOfWeek, config) {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const url = `${API_URL}/clinic-hours/${dayOfWeek}`;
+    
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: headers,
+      body: JSON.stringify(config)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || `Failed to update clinic hours`);
+    }
+
+    const data = await res.json();
+    console.log("✅ Clinic hours updated:", data);
+    return data;
+  } catch (err) {
+    console.error("❌ Error updating clinic hours:", err);
+    throw err;
   }
 }
