@@ -6,8 +6,20 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-@EntityScan("com.smilecare.smilecare_backend.model")
-@EnableJpaRepositories("com.smilecare.smilecare_backend.repository")
+@EntityScan({
+    "com.smilecare.smilecare_backend.appointment.model",
+    "com.smilecare.smilecare_backend.timeslot.model",
+    "com.smilecare.smilecare_backend.dentalservice.model",
+    "com.smilecare.smilecare_backend.user.model",
+    "com.smilecare.smilecare_backend.auth.model"
+})
+@EnableJpaRepositories({
+    "com.smilecare.smilecare_backend.appointment.repository",
+    "com.smilecare.smilecare_backend.timeslot.repository",
+    "com.smilecare.smilecare_backend.dentalservice.repository",
+    "com.smilecare.smilecare_backend.user.repository",
+    "com.smilecare.smilecare_backend.auth.repository"
+})
 public class SmilecareBackendApplication {
 
 	public static void main(String[] args) {

@@ -145,3 +145,90 @@ export async function updateAppointmentStatus(appointmentId, status) {
     throw new Error(err.message || "Network error");
   }
 }
+
+/**
+ * Get available time slots
+ */
+export async function getAvailableTimeSlots() {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_URL}/time-slots/available`, {
+      method: "GET",
+      headers: headers
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch time slots (${res.status})`);
+    }
+
+    return await res.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
+/**
+ * Book an appointment
+ * @param {Object} bookingData - { patientId, serviceId, timeSlotId }
+ * @returns {Promise<Object>} appointment data
+ */
+export async function bookAppointment(bookingData) {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_URL}/appointments/book`, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({
+        ...bookingData,
+        status: "PENDING"
+      })
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Failed to book appointment");
+    }
+
+    return await res.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
+/**
+ * Get all services
+ * @returns {Promise<Array>} list of dental services
+ */
+export async function getServices() {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_URL}/services`, {
+      method: "GET",
+      headers: headers
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch services (${res.status})`);
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error("Error fetching services:", err);
+    return []; // Return empty array if fetch fails
+  }
+}
