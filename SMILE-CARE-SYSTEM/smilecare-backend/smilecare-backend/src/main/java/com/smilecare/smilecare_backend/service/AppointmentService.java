@@ -94,4 +94,21 @@ public class AppointmentService {
         appointmentRepository.save(appointment);
     }
 
+    public Appointment updateAppointmentStatus(Long id, String status) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        try {
+            AppointmentStatus newStatus = AppointmentStatus.valueOf(status.toUpperCase());
+            appointment.setStatus(newStatus);
+            return appointmentRepository.save(appointment);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid appointment status: " + status);
+        }
+    }
+
+    public List<Appointment> getAppointmentsByUser(Long userId) {
+        return appointmentRepository.findByPatientId(userId);
+    }
+
 }

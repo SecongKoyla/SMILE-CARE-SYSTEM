@@ -42,4 +42,17 @@ public class AppointmentController {
     public void cancelAppointment(@PathVariable Long id) {
         service.cancelAppointment(id);
     }
+
+    @PutMapping("/{id}/status")
+    public Appointment updateAppointmentStatus(
+            @PathVariable Long id,
+            @RequestParam String status
+    ) {
+        return service.updateAppointmentStatus(id, status);
+    }
+
+    @GetMapping("/user/{userId}")
+    public List<Appointment> getUserAppointments(@PathVariable Long userId) {
+        return service.getAppointmentsByUser(userId);
+    }
 }

@@ -1,8 +1,8 @@
 package com.smilecare.smilecare_backend;
 
-import com.smilecare.smilecare_backend.model.User;
-import com.smilecare.smilecare_backend.model.Role;
-import com.smilecare.smilecare_backend.repository.UserRepository;
+import com.smilecare.smilecare_backend.user.model.User;
+import com.smilecare.smilecare_backend.user.model.Role;
+import com.smilecare.smilecare_backend.user.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -26,12 +26,12 @@ public class DataLoader implements CommandLineRunner {
     public void run(String... args) throws Exception {
         String email = "test@smilecare.com";
 
-        if (!userRepository.existsByEmail(email)) {
+        if (userRepository.findByEmail(email).isEmpty()) {
             User user = new User();
             user.setFullName("Test User");
             user.setEmail(email);
             user.setPasswordHash(passwordEncoder.encode("123456"));
-            user.setRole(Role.valueOf("ADMIN"));
+            user.setRole(Role.ADMIN);
             user.setCreatedAt(LocalDateTime.now());
 
             // ✅ Set default profile photo

@@ -25,6 +25,9 @@ import ProfilePage      from "./pages/ProfilePage.jsx";
 import AdminServicesPage from "./pages/AdminServicePage.jsx";
 import AdminApptsPage    from "./pages/AdminApptsPage.jsx";
 
+// API
+import { getServices, getUserAppointments } from "./api/api.js";
+
 // Seed data
 import { INITIAL_SERVICES, INITIAL_APPOINTMENTS } from "./data/constants.js";
 
@@ -98,6 +101,25 @@ export default function App() {
     localStorage.setItem("appointments", JSON.stringify(appointments));
   }, [appointments]);
 
+  // ─────────────────────────────────────────────
+  // FETCH SERVICES FROM BACKEND ON MOUNT
+  // ─────────────────────────────────────────────
+  useEffect(() => {
+    const fetchServicesFromBackend = async () => {
+      try {
+        const backendServices = await getServices();
+        if (backendServices && backendServices.length > 0) {
+          setServices(backendServices);
+        }
+      } catch (err) {
+        console.error("Failed to fetch services from backend, using defaults");
+        // Keep using localStorage saved services or INITIAL_SERVICES
+      }
+    };
+    
+    fetchServicesFromBackend();
+  }, []);
+
 
   // ─────────────────────────────────────────────
   // AUTH HANDLERS
@@ -147,26 +169,49 @@ export default function App() {
   // ─────────────────────────────────────────────
   // BOOK APPOINTMENT
   // ─────────────────────────────────────────────
-  const handleBook = ({ type, time }) => {
+  const handleBook = async ({ type, time }) => {
+    // Fetch updated appointments for the user from backend
+    if (user?.id) {
+      try {
+        const userAppts = await getUserAppointments(user.id);
+        
+        // Map backend appointments to display format
+        const statusMap = {
+          "APPROVED": "confirmed",
+          "PENDING": "pending",
+          "CANCELLED": "cancelled",
+          "ARRIVED": "confirmed",
+          "COMPLETED": "confirmed"
+        };
 
-    const newAppt = {
+        const transformed = userAppts.map(appt => ({
+          id: appt.id,
+          day: new Date(appt.timeSlot.date).getDate().toString().padStart(2, '0'),
+          month: new Date(appt.timeSlot.date).toLocaleString('default', { month: 'short' }),
+          type: appt.service.name,
+          doctor: "Dr. Rivera",
+          time: appt.timeSlot.startTime,
+          status: statusMap[appt.status] || appt.status.toLowerCase(),
+          patient: user.name
+        }));
 
-      id: Date.now(),
-
-      day: "20",
-      month: "Mar",
-
-      type,
-      doctor: "Dr. Rivera",
-      time,
-
-      status: "confirmed",
-
-      patient: user?.name ?? "Patient",
-
-    };
-
-    setAppointments(prev => [newAppt, ...prev]);
+        setAppointments(transformed);
+      } catch (err) {
+        console.error("Error fetching appointments after booking:", err);
+        // Fallback: add a local appointment
+        const newAppt = {
+          id: Date.now(),
+          day: new Date().getDate().toString().padStart(2, '0'),
+          month: new Date().toLocaleString('default', { month: 'short' }),
+          type,
+          doctor: "Dr. Rivera",
+          time,
+          status: "pending",
+          patient: user?.name ?? "Patient",
+        };
+        setAppointments(prev => [newAppt, ...prev]);
+      }
+    }
   };
 
 
@@ -211,7 +256,7 @@ export default function App() {
       case "appointments":
         return (
             <AppointmentsPage
-                appointments={appointments}
+                user={user}
                 setPage={setPage}
             />
         );
@@ -220,6 +265,7 @@ export default function App() {
         return (
             <BookPage
                 services={services}
+                user={user}
                 setPage={setPage}
                 onBook={handleBook}
             />
@@ -255,9 +301,7 @@ export default function App() {
 
       case "admin-appts":
         return (
-            <AdminApptsPage
-                appointments={appointments}
-            />
+            <AdminApptsPage />
         );
 
 

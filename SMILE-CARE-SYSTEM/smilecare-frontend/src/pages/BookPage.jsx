@@ -1,19 +1,73 @@
 // pages/BookPage.jsx
-import { useState } from "react";
-import { TIME_SLOTS } from "../data/constants.js";
+import { useState, useEffect } from "react";
+import { getAvailableTimeSlots, bookAppointment, getUserAppointments } from "../api/api.js";
 
-export default function BookPage({ services, setPage, onBook }) {
+export default function BookPage({ services, user, setPage, onBook }) {
   const [selectedIdx, setSelectedIdx] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(null);
-  const [confirmed, setConfirmed]       = useState(false);
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState(null);
+  const [confirmed, setConfirmed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  const handleConfirm = () => {
-    if (selectedIdx === null || !selectedTime) return;
-    onBook({
-      type: services[selectedIdx].name,
-      time: selectedTime,
-    });
-    setConfirmed(true);
+  // Fetch available time slots on mount
+  useEffect(() => {
+    fetchTimeSlots();
+  }, []);
+
+  const fetchTimeSlots = async () => {
+    try {
+      setError(null);
+      const slots = await getAvailableTimeSlots();
+      setTimeSlots(slots);
+    } catch (err) {
+      console.error("Error fetching time slots:", err);
+      setError("Could not load available time slots. Please try again.");
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (selectedIdx === null || !selectedTimeSlotId || !user?.id) {
+      setError("Please select a service and time slot");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Find the service ID from the services array
+      const selectedService = services[selectedIdx];
+      if (!selectedService?.id) {
+        throw new Error("Invalid service selected");
+      }
+
+      // Book the appointment via API
+      const bookingData = {
+        patientId: user.id,
+        serviceId: selectedService.id,
+        timeSlotId: selectedTimeSlotId,
+        status: "PENDING"
+      };
+
+      const appointment = await bookAppointment(bookingData);
+      
+      // Call the old onBook callback for any legacy handling
+      if (onBook) {
+        onBook({
+          type: selectedService.name,
+          time: timeSlots.find(t => t.id === selectedTimeSlotId)?.startTime || ""
+        });
+      }
+
+      setBookingSuccess(true);
+      setConfirmed(true);
+    } catch (err) {
+      console.error("Booking error:", err);
+      setError(err.message || "Failed to book appointment. Please try again.");
+      setLoading(false);
+    }
   };
 
   if (confirmed) {
@@ -25,7 +79,8 @@ export default function BookPage({ services, setPage, onBook }) {
             <h2>Appointment Booked!</h2>
             <p>
               Your <strong>{services[selectedIdx]?.name}</strong> is scheduled at{" "}
-              <strong>{selectedTime}</strong>.<br />
+              <strong>{timeSlots.find(t => t.id === selectedTimeSlotId)?.startTime}</strong> on{" "}
+              <strong>{new Date(timeSlots.find(t => t.id === selectedTimeSlotId)?.date).toLocaleDateString()}</strong>.<br />
               We'll send you a reminder before your visit.
             </p>
             <button className="btn-primary" onClick={() => setPage("appointments")}>
@@ -43,6 +98,12 @@ export default function BookPage({ services, setPage, onBook }) {
         <h1>Book an Appointment</h1>
         <p>Choose a service and time that works for you</p>
       </div>
+
+      {error && (
+        <div className="card" style={{ background: "#fee", borderLeft: "4px solid #f66", marginBottom: "16px" }}>
+          <p style={{ color: "#c00", margin: "0", fontSize: "13px" }}>⚠️ {error}</p>
+        </div>
+      )}
 
       {/* Step 1: Service */}
       <div className="card" style={{ marginBottom: 14 }}>
@@ -65,7 +126,7 @@ export default function BookPage({ services, setPage, onBook }) {
               <div
                 key={s.id}
                 className={`book-service-card${selectedIdx === i ? " selected" : ""}`}
-                onClick={() => { setSelectedIdx(i); setSelectedTime(null); }}
+                onClick={() => { setSelectedIdx(i); setSelectedTimeSlotId(null); }}
               >
                 <div className="book-service-icon">{s.icon}</div>
                 <div>
@@ -78,34 +139,54 @@ export default function BookPage({ services, setPage, onBook }) {
         )}
       </div>
 
-      {/* Step 2: Time (only after service picked) */}
+      {/* Step 2: Time Slot */}
       {selectedIdx !== null && (
         <div className="card fade-in" style={{ marginBottom: 14 }}>
           <div className="card-title">
             <span>Step 2 — Choose a Time Slot</span>
+            {timeSlots.length === 0 && (
+              <span style={{ color: "var(--gray)", fontSize: 11, fontWeight: 400 }}>
+                No slots available
+              </span>
+            )}
           </div>
-          <div className="time-slots">
-            {TIME_SLOTS.map(t => (
-              <div
-                key={t}
-                className={`time-slot${selectedTime === t ? " selected" : ""}`}
-                onClick={() => setSelectedTime(t)}
-              >
-                {t}
-              </div>
-            ))}
-          </div>
+          {timeSlots.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-icon">📅</span>
+              <p>No available time slots at the moment.<br />Please check back later.</p>
+              <button className="btn-primary" onClick={fetchTimeSlots}>
+                Refresh
+              </button>
+            </div>
+          ) : (
+            <div className="time-slots">
+              {timeSlots.map(t => (
+                <div
+                  key={t.id}
+                  className={`time-slot${selectedTimeSlotId === t.id ? " selected" : ""}`}
+                  onClick={() => setSelectedTimeSlotId(t.id)}
+                  title={`${new Date(t.date).toLocaleDateString()} at ${t.startTime}`}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div>{t.startTime}</div>
+                  <div style={{ fontSize: "11px", color: "var(--gray)", marginTop: "2px" }}>
+                    {new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* Confirm */}
       <button
         className="btn-primary"
-        style={{ width: "100%", padding: 15, fontSize: 15, opacity: (selectedIdx !== null && selectedTime) ? 1 : 0.45 }}
-        disabled={selectedIdx === null || !selectedTime}
+        style={{ width: "100%", padding: 15, fontSize: 15, opacity: (selectedIdx !== null && selectedTimeSlotId) ? 1 : 0.45 }}
+        disabled={selectedIdx === null || !selectedTimeSlotId || loading}
         onClick={handleConfirm}
       >
-        Confirm Appointment
+        {loading ? "⏳ Booking..." : "Confirm Appointment"}
       </button>
     </main>
   );
