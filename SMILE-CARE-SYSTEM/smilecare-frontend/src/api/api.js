@@ -274,19 +274,27 @@ export async function getClinicHours() {
     
     const res = await fetch(url, {
       method: "GET",
-      headers: headers
+      headers: headers,
+      timeout: 10000
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch clinic hours (${res.status})`);
+      const errorText = await res.text();
+      console.error(`❌ API returned ${res.status}:`, errorText);
+      throw new Error(`Failed to fetch clinic hours (${res.status}): ${errorText}`);
     }
 
     const data = await res.json();
-    console.log("✅ Clinic hours:", data);
-    return data;
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      console.warn("⚠️ No clinic hours data returned from API");
+      return [];
+    }
+    
+    console.log("✅ Clinic hours fetched successfully:", data);
+    return Array.isArray(data) ? data : [];
   } catch (err) {
-    console.error("❌ Error fetching clinic hours:", err);
-    return [];
+    console.error("❌ Error fetching clinic hours:", err.message || err);
+    throw new Error(err.message || "Failed to fetch clinic hours. Please try again.");
   }
 }
 
@@ -312,12 +320,18 @@ export async function updateClinicHours(dayOfWeek, config) {
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || `Failed to update clinic hours`);
+      const errorText = await res.text();
+      console.error(`❌ Update failed (${res.status}):`, errorText);
+      try {
+        const errorData = JSON.parse(errorText);
+        throw new Error(errorData.error || `Failed to update clinic hours`);
+      } catch {
+        throw new Error(`Failed to update clinic hours (${res.status})`);
+      }
     }
 
     const data = await res.json();
-    console.log("✅ Clinic hours updated:", data);
+    console.log("✅ Clinic hours updated successfully:", data);
     return data;
   } catch (err) {
     console.error("❌ Error updating clinic hours:", err);

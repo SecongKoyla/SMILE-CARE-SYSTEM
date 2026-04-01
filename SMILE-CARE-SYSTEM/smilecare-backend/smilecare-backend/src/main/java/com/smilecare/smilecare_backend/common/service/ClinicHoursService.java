@@ -55,6 +55,14 @@ public class ClinicHoursService {
     }
 
     private ClinicHoursDTO toDTO(ClinicHours hours) {
+        if (hours == null) {
+            throw new IllegalArgumentException("ClinicHours cannot be null");
+        }
+        
+        if (hours.getDayOfWeek() == null || hours.getDayOfWeek() < 0 || hours.getDayOfWeek() > 6) {
+            throw new IllegalArgumentException("Invalid dayOfWeek: " + hours.getDayOfWeek() + ". Must be 0-6.");
+        }
+
         String[] dayNames = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
         String dayName = dayNames[hours.getDayOfWeek()];
 

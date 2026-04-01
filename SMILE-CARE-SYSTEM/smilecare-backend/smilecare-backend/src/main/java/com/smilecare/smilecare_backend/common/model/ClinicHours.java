@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 public class ClinicHours {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "clinic_hours_seq")
+    @SequenceGenerator(name = "clinic_hours_seq", sequenceName = "clinic_hours_id_seq", allocationSize = 1)
     private Long id;
 
     // Days of week: MONDAY=0, ..., SUNDAY=6

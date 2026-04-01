@@ -13,12 +13,15 @@ import com.smilecare.smilecare_backend.common.repository.ClinicHoursRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class DataLoader implements CommandLineRunner {
@@ -42,6 +45,7 @@ public class DataLoader implements CommandLineRunner {
     }
 
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
         System.out.println("\n╔══════════════════════════════════════════════════════════╗");
         System.out.println("║         SMILE CARE - DATA LOADER STARTING               ║");
@@ -58,7 +62,6 @@ public class DataLoader implements CommandLineRunner {
             user.setRole(Role.ADMIN);
             user.setCreatedAt(LocalDateTime.now());
 
-            // ✅ Set default profile photo
             try {
                 Path path = Path.of("src/main/resources/images/default.png");
                 byte[] photoBytes = Files.readAllBytes(path);
@@ -76,22 +79,22 @@ public class DataLoader implements CommandLineRunner {
         // ===================== CREATE CLINIC HOURS =====================
         if (clinicHoursRepository.count() == 0) {
             System.out.println("📋 Creating default clinic hours...\n");
-            
+
             String[] dayNames = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
-            
+
             for (int day = 0; day < 7; day++) {
                 ClinicHours hours = new ClinicHours();
                 hours.setDayOfWeek(day);
-                
+
                 if (day < 5) {
-                    // Monday-Friday: 9:00-12:00, 14:00-17:00
+                    // Monday-Friday: Open 9:00-12:00 (morning) and 14:00-17:00 (afternoon)
                     hours.setIsOperating(true);
                     hours.setMorningStart(LocalTime.of(9, 0));
                     hours.setMorningEnd(LocalTime.of(12, 0));
                     hours.setAfternoonStart(LocalTime.of(14, 0));
                     hours.setAfternoonEnd(LocalTime.of(17, 0));
                 } else if (day == 5) {
-                    // Saturday: 9:00-13:00 only, afternoon closed
+                    // Saturday: Open 9:00-13:00 (morning only, no afternoon)
                     hours.setIsOperating(true);
                     hours.setMorningStart(LocalTime.of(9, 0));
                     hours.setMorningEnd(LocalTime.of(13, 0));
@@ -100,8 +103,12 @@ public class DataLoader implements CommandLineRunner {
                 } else {
                     // Sunday: Closed
                     hours.setIsOperating(false);
+                    hours.setMorningStart(null);
+                    hours.setMorningEnd(null);
+                    hours.setAfternoonStart(null);
+                    hours.setAfternoonEnd(null);
                 }
-                
+
                 clinicHoursRepository.save(hours);
                 System.out.println("  ✓ " + dayNames[day] + " configured");
             }
@@ -109,14 +116,15 @@ public class DataLoader implements CommandLineRunner {
         } else {
             System.out.println("✓ Clinic hours already configured");
         }
+
+        // ===================== CREATE SERVICES & TIME SLOTS =====================
         long serviceCount = dentalServiceRepository.count();
         long timeSlotCount = timeSlotRepository.count();
-        
+
         System.out.println("📊 Current database state:");
         System.out.println("    Services: " + serviceCount);
         System.out.println("    Time Slots: " + timeSlotCount);
 
-        // If there are services but no or very few time slots, clear everything and start fresh
         if (serviceCount > 0 && timeSlotCount < 10) {
             System.out.println("🔄 Detected incomplete data, clearing and recreating...");
             timeSlotRepository.deleteAll();
@@ -127,7 +135,7 @@ public class DataLoader implements CommandLineRunner {
 
         if (serviceCount == 0) {
             System.out.println("📝 Creating sample services and time slots...\n");
-            
+
             String[] serviceNames = {"Cleaning", "Filling", "Root Canal", "Whitening"};
             String[] serviceDurations = {"30 min", "45 min", "60 min", "45 min"};
             String[] servicePrices = {"$75", "$150", "$300", "$200"};
@@ -135,52 +143,46 @@ public class DataLoader implements CommandLineRunner {
 
             LocalDate today = LocalDate.now();
 
+            List<DentalService> savedServices = new ArrayList<>();
             for (int i = 0; i < serviceNames.length; i++) {
-                try {
-                    DentalService service = new DentalService();
-                    service.setName(serviceNames[i]);
-                    service.setDescription("Professional " + serviceNames[i].toLowerCase() + " service");
-                    service.setDuration(serviceDurations[i]);
-                    service.setPrice(servicePrices[i]);
-                    service.setIcon(serviceIcons[i]);
-                    
-                    DentalService savedService = dentalServiceRepository.save(service);
-                    System.out.println("  ✓ Service saved: " + serviceNames[i] + " (ID: " + savedService.getId() + ")");
+                DentalService service = new DentalService();
+                service.setName(serviceNames[i]);
+                service.setDescription("Professional " + serviceNames[i].toLowerCase() + " service");
+                service.setDuration(serviceDurations[i]);
+                service.setPrice(servicePrices[i]);
+                service.setIcon(serviceIcons[i]);
+                savedServices.add(service);
+            }
+            dentalServiceRepository.saveAll(savedServices);
+            System.out.println("✓ All services saved");
 
-                    // Create time slots for each service across next 7 days
-                    int slotCount = 0;
-                    for (int day = 1; day <= 7; day++) {
-                        LocalDate slotDate = today.plusDays(day);
-                        
-                        // Morning slot
-                        TimeSlot morningSlot = new TimeSlot();
-                        morningSlot.setService(savedService);
-                        morningSlot.setDate(slotDate);
-                        morningSlot.setStartTime(LocalTime.of(9, 0));
-                        morningSlot.setEndTime(LocalTime.of(10, 0));
-                        morningSlot.setStatus(TimeSlotStatus.AVAILABLE);
-                        timeSlotRepository.save(morningSlot);
-                        slotCount++;
+            List<TimeSlot> allTimeSlots = new ArrayList<>();
+            for (DentalService service : savedServices) {
+                for (int day = 1; day <= 7; day++) {
+                    LocalDate slotDate = today.plusDays(day);
 
-                        // Afternoon slot
-                        TimeSlot afternoonSlot = new TimeSlot();
-                        afternoonSlot.setService(savedService);
-                        afternoonSlot.setDate(slotDate);
-                        afternoonSlot.setStartTime(LocalTime.of(14, 0));
-                        afternoonSlot.setEndTime(LocalTime.of(15, 0));
-                        afternoonSlot.setStatus(TimeSlotStatus.AVAILABLE);
-                        timeSlotRepository.save(afternoonSlot);
-                        slotCount++;
-                    }
-                    
-                    System.out.println("    └─ Created " + slotCount + " time slots\n");
-                } catch (Exception e) {
-                    System.err.println("❌ Error creating service " + serviceNames[i] + ": " + e.getMessage());
-                    e.printStackTrace();
+                    // Morning slot
+                    TimeSlot morningSlot = new TimeSlot();
+                    morningSlot.setService(service);
+                    morningSlot.setDate(slotDate);
+                    morningSlot.setStartTime(LocalTime.of(9, 0));
+                    morningSlot.setEndTime(LocalTime.of(10, 0));
+                    morningSlot.setStatus(TimeSlotStatus.AVAILABLE);
+                    allTimeSlots.add(morningSlot);
+
+                    // Afternoon slot
+                    TimeSlot afternoonSlot = new TimeSlot();
+                    afternoonSlot.setService(service);
+                    afternoonSlot.setDate(slotDate);
+                    afternoonSlot.setStartTime(LocalTime.of(14, 0));
+                    afternoonSlot.setEndTime(LocalTime.of(15, 0));
+                    afternoonSlot.setStatus(TimeSlotStatus.AVAILABLE);
+                    allTimeSlots.add(afternoonSlot);
                 }
             }
-            
-            System.out.println("✓ All services and time slots created successfully");
+
+            timeSlotRepository.saveAll(allTimeSlots);
+            System.out.println("✓ All time slots saved\n");
         } else {
             System.out.println("✓ Services already exist, skipping creation");
         }

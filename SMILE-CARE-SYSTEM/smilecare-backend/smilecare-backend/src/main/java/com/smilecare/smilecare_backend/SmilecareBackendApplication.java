@@ -11,14 +11,16 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
     "com.smilecare.smilecare_backend.timeslot.model",
     "com.smilecare.smilecare_backend.dentalservice.model",
     "com.smilecare.smilecare_backend.user.model",
-    "com.smilecare.smilecare_backend.auth.model"
+    "com.smilecare.smilecare_backend.auth.model",
+    "com.smilecare.smilecare_backend.common.model"
 })
 @EnableJpaRepositories({
     "com.smilecare.smilecare_backend.appointment.repository",
     "com.smilecare.smilecare_backend.timeslot.repository",
     "com.smilecare.smilecare_backend.dentalservice.repository",
     "com.smilecare.smilecare_backend.user.repository",
-    "com.smilecare.smilecare_backend.auth.repository"
+    "com.smilecare.smilecare_backend.auth.repository",
+    "com.smilecare.smilecare_backend.common.repository"
 })
 public class SmilecareBackendApplication {
 
