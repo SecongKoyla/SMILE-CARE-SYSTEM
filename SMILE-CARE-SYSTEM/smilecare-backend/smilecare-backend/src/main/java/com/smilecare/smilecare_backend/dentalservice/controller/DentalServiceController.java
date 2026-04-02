@@ -2,32 +2,100 @@ package com.smilecare.smilecare_backend.dentalservice.controller;
 
 import com.smilecare.smilecare_backend.dentalservice.model.DentalService;
 import com.smilecare.smilecare_backend.dentalservice.service.DentalServiceService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/v1/services")
 public class DentalServiceController {
 
     private final DentalServiceService service;
+    private static final Logger logger = Logger.getLogger(DentalServiceController.class.getName());
 
     public DentalServiceController(DentalServiceService service) {
         this.service = service;
     }
 
     @GetMapping
-    public List<DentalService> getAllServices() {
-        return service.getAllServices();
+    public ResponseEntity<?> getAllServices() {
+        try {
+            logger.info("📋 Fetching all dental services");
+            List<DentalService> services = service.getAllServices();
+            logger.info("✅ Found " + services.size() + " services");
+            return ResponseEntity.ok(services);
+        } catch (Exception e) {
+            logger.severe("❌ Error fetching services: " + e.getMessage());
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "Failed to fetch services: " + e.getMessage()));
+        }
     }
 
     @PostMapping
-    public DentalService createService(@RequestBody DentalService dentalService) {
-        return service.createService(dentalService);
+    public ResponseEntity<?> createService(@RequestBody DentalService dentalService) {
+        try {
+            logger.info("➕ Creating new service: " + dentalService.getName());
+            
+            if (dentalService.getName() == null || dentalService.getName().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Service name is required"));
+            }
+            
+            DentalService created = service.createService(dentalService);
+            logger.info("✅ Service created successfully (ID: " + created.getId() + ")");
+            return ResponseEntity.ok(created);
+        } catch (Exception e) {
+            logger.severe("❌ Error creating service: " + e.getMessage());
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "Failed to create service: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateService(@PathVariable Long id, @RequestBody DentalService dentalService) {
+        try {
+            logger.info("✏️ Updating service " + id);
+            
+            if (dentalService.getName() == null || dentalService.getName().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Service name is required"));
+            }
+            
+            DentalService updated = service.updateService(id, dentalService);
+            if (updated == null) {
+                logger.warning("⚠️ Service not found: " + id);
+                return ResponseEntity.notFound().build();
+            }
+            
+            logger.info("✅ Service updated successfully");
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            logger.severe("❌ Error updating service: " + e.getMessage());
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "Failed to update service: " + e.getMessage()));
+        }
     }
 
     @DeleteMapping("/{id}")
-    public void deleteService(@PathVariable Long id) {
-        service.deleteService(id);
+    public ResponseEntity<?> deleteService(@PathVariable Long id) {
+        try {
+            logger.info("🗑️ Deleting service " + id);
+            boolean deleted = service.deleteService(id);
+            
+            if (!deleted) {
+                logger.warning("⚠️ Service not found: " + id);
+                return ResponseEntity.notFound().build();
+            }
+            
+            logger.info("✅ Service deleted successfully");
+            return ResponseEntity.ok(Map.of("message", "Service deleted successfully"));
+        } catch (Exception e) {
+            logger.severe("❌ Error deleting service: " + e.getMessage());
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "Failed to delete service: " + e.getMessage()));
+        }
     }
 }

@@ -258,6 +258,127 @@ export async function getServices() {
 }
 
 /**
+ * Create a new dental service
+ * @param {Object} serviceData - {name, description, price, duration, icon}
+ * @returns {Promise<Object>} newly created service
+ */
+export async function addService(serviceData) {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const url = `${API_URL}/services`;
+    console.log("➕ Creating new service:", serviceData.name);
+    
+    const res = await fetch(url, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({
+        name: serviceData.name,
+        description: serviceData.desc || serviceData.description,
+        price: serviceData.price,
+        duration: serviceData.duration,
+        icon: serviceData.icon
+      })
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ Failed to create service:", res.status, errorText);
+      throw new Error(`Failed to create service (${res.status})`);
+    }
+
+    const newService = await res.json();
+    console.log("✅ Service created successfully:", newService);
+    return newService;
+  } catch (err) {
+    console.error("❌ Error creating service:", err);
+    throw err;
+  }
+}
+
+/**
+ * Update an existing dental service
+ * @param {number} serviceId - Service ID to update
+ * @param {Object} serviceData - {name, description, price, duration, icon}
+ * @returns {Promise<Object>} updated service
+ */
+export async function updateService(serviceId, serviceData) {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const url = `${API_URL}/services/${serviceId}`;
+    console.log("✏️ Updating service:", serviceId);
+    
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: headers,
+      body: JSON.stringify({
+        name: serviceData.name,
+        description: serviceData.desc || serviceData.description,
+        price: serviceData.price,
+        duration: serviceData.duration,
+        icon: serviceData.icon
+      })
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ Failed to update service:", res.status, errorText);
+      throw new Error(`Failed to update service (${res.status})`);
+    }
+
+    const updatedService = await res.json();
+    console.log("✅ Service updated successfully:", updatedService);
+    return updatedService;
+  } catch (err) {
+    console.error("❌ Error updating service:", err);
+    throw err;
+  }
+}
+
+/**
+ * Delete a dental service
+ * @param {number} serviceId - Service ID to delete
+ * @returns {Promise<void>}
+ */
+export async function deleteService(serviceId) {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const url = `${API_URL}/services/${serviceId}`;
+    console.log("🗑️ Deleting service:", serviceId);
+    
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: headers
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ Failed to delete service:", res.status, errorText);
+      throw new Error(`Failed to delete service (${res.status})`);
+    }
+
+    console.log("✅ Service deleted successfully");
+  } catch (err) {
+    console.error("❌ Error deleting service:", err);
+    throw err;
+  }
+}
+
+/**
  * Get all clinic hours (admin availability config)
  * @returns {Promise<Array>} list of clinic hours for each day
  */
