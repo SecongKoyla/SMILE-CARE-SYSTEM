@@ -33,8 +33,22 @@ export default function BookingCalendar({
   };
 
   const getSlotsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return timeSlots.filter(slot => slot.date === dateStr);
+    if (!date) return [];
+    
+    // Format date as YYYY-MM-DD in local timezone (not UTC)
+    // This ensures consistent formatting with backend
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    return timeSlots.filter(slot => {
+      // Handle both string and date formats from backend
+      const slotDate = typeof slot.date === 'string' ? slot.date : 
+                       slot.date instanceof Date ? slot.date.toISOString().split('T')[0] :
+                       String(slot.date);
+      return slotDate === dateStr;
+    });
   };
 
   const handlePrevMonth = () => {

@@ -236,10 +236,27 @@ export async function updateAppointmentStatus(appointmentId, status) {
 }
 
 /**
+ * Format a JavaScript Date to YYYY-MM-DD string in local timezone
+ * This is critical for consistent date handling between frontend and backend
+ */
+function formatDateToISO(date) {
+  if (!date) return null;
+  
+  // Convert JavaScript Date to local timezone YYYY-MM-DD
+  // (not UTC which would use toISOString())
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Get available time slots
  * @param {number} serviceId - Optional: filter by service ID
+ * @param {Date} selectedDate - Optional: filter by specific date
+ * @returns {Promise<Array>} Array of available time slot objects
  */
-export async function getAvailableTimeSlots(serviceId) {
+export async function getAvailableTimeSlots(serviceId, selectedDate = null) {
   try {
     const headers = { "Content-Type": "application/json" };
     const token = localStorage.getItem("accessToken");
@@ -247,9 +264,23 @@ export async function getAvailableTimeSlots(serviceId) {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
+    // Build URL with parameters
     let url = `${API_URL}/time-slots/available`;
+    const params = new URLSearchParams();
+    
     if (serviceId) {
-      url += `?serviceId=${serviceId}`;
+      params.append('serviceId', serviceId);
+      console.log("🔍 Service ID:", serviceId);
+    }
+    
+    if (selectedDate) {
+      const formattedDate = formatDateToISO(selectedDate);
+      params.append('date', formattedDate);
+      console.log("🔍 Selected Date:", formattedDate);
+    }
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
     }
 
     console.log("🔍 Fetching from URL:", url);
@@ -268,7 +299,7 @@ export async function getAvailableTimeSlots(serviceId) {
     }
 
     const data = await res.json();
-    console.log("✅ Time slots received:", data);
+    console.log("✅ Time slots received:", data, `(${data?.length || 0} slots)`);
     return data;
   } catch (err) {
     console.error("❌ Network/Parse error:", err);

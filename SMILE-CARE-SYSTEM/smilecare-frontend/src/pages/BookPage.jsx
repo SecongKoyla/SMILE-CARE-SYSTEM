@@ -34,7 +34,14 @@ export default function BookPage({ services, user, setPage, onBook }) {
     }
   }, [selectedIdx]);
 
-  const fetchTimeSlots = async () => {
+  // Fetch time slots when a date is selected (for optimization)
+  useEffect(() => {
+    if (selectedIdx !== null && selectedDate) {
+      fetchTimeSlots(selectedDate);
+    }
+  }, [selectedDate]);
+
+  const fetchTimeSlots = async (date = null) => {
     if (selectedIdx === null) return;
     
     try {
@@ -47,14 +54,19 @@ export default function BookPage({ services, user, setPage, onBook }) {
         return;
       }
       
-      const slots = await getAvailableTimeSlots(selectedService.id);
+      // Fetch slots with optional date parameter for optimization
+      const slots = await getAvailableTimeSlots(selectedService.id, date);
       console.log("📅 Received slots:", slots);
       console.log("📅 Slot count:", slots?.length || 0);
       
       if (!slots || slots.length === 0) {
         console.warn("⚠️ No slots received from backend");
         setTimeSlots([]);
-        setError("No available time slots for this service yet.");
+        if (date) {
+          setError("No available time slots for this date. Please select another date.");
+        } else {
+          setError("No available time slots for this service yet.");
+        }
       } else {
         setTimeSlots(slots);
         console.log("✅ TimeSlots set successfully");
