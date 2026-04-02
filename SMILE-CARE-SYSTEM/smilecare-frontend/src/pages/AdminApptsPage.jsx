@@ -11,23 +11,56 @@ export default function AdminApptsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [retryCount, setRetryCount] = useState(0);
+  const [retryTimeout, setRetryTimeout] = useState(null);
 
   useEffect(() => {
     fetchAppointments();
+    return () => {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
+    };
   }, []);
 
-  const fetchAppointments = async () => {
+  const fetchAppointments = async (autoRetry = false) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!autoRetry) {
+        setLoading(true);
+        setError(null);
+        setRetryCount(0);
+      }
+      
+      console.log("[AdminApptsPage] Fetching appointments...");
       const data = await getAllAppointments();
       setAppointments(data || []);
+      setError(null);
+      setRetryCount(0);
     } catch (err) {
-      console.error("Error fetching appointments:", err);
+      console.error("[AdminApptsPage] Error fetching appointments:", err);
       setError(err.message);
       setAppointments([]);
+      
+      // Auto-retry on server errors (5xx) up to 3 times
+      if (autoRetry === false && err.message.includes("Server error")) {
+        const newRetryCount = retryCount + 1;
+        if (newRetryCount <= 3) {
+          setRetryCount(newRetryCount);
+          const delayMs = Math.min(1000 * Math.pow(2, newRetryCount - 1), 5000);
+          console.log(`[AdminApptsPage] Scheduling auto-retry ${newRetryCount}/3 in ${delayMs}ms...`);
+          
+          const timeout = setTimeout(() => {
+            fetchAppointments(true);
+          }, delayMs);
+          
+          setRetryTimeout(timeout);
+          setError(`Server error. Retrying automatically (${newRetryCount}/3)...`);
+        }
+      }
     } finally {
-      setLoading(false);
+      if (!autoRetry) {
+        setLoading(false);
+      }
     }
   };
 
@@ -46,11 +79,14 @@ export default function AdminApptsPage() {
   }
 
   if (error) {
+    const isAutoRetrying = error.includes("Retrying automatically");
     return (
       <div className="sc-main page-enter">
         <div className="card" style={{ textAlign: "center", padding: "40px" }}>
-          <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
-          <h2>Unable to Load Appointments</h2>
+          <div style={{ fontSize: "48px", marginBottom: "16px" }}>
+            {isAutoRetrying ? "⏳" : "⚠️"}
+          </div>
+          <h2>{isAutoRetrying ? "Retrying..." : "Unable to Load Appointments"}</h2>
           <p style={{ color: "var(--gray)", marginBottom: "16px" }}>
             {error}
           </p>
@@ -59,10 +95,11 @@ export default function AdminApptsPage() {
           </p>
           <button 
             className="btn-primary"
-            onClick={fetchAppointments}
+            onClick={() => fetchAppointments()}
             style={{ minWidth: "120px" }}
+            disabled={isAutoRetrying}
           >
-            🔄 Retry
+            🔄 {isAutoRetrying ? "Retrying..." : "Retry Now"}
           </button>
         </div>
       </div>

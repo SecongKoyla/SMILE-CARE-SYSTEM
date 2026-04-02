@@ -1,6 +1,7 @@
 package com.smilecare.smilecare_backend.user.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,12 +16,14 @@ public class User {
     private String email;
 
     @Column(name = "password_hash", nullable = false)
+    @JsonIgnore
     private String passwordHash;
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
     @Column(name = "profile_photo", columnDefinition = "BYTEA")
+    @JsonIgnore
     private byte[] profilePhoto;
 
     @Enumerated(EnumType.STRING)

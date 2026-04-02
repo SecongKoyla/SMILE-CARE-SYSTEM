@@ -9,6 +9,44 @@ function getAuthHeaders() {
 }
 
 /**
+ * Helper function to make fetch requests with retry logic
+ * @param {string} url - The URL to fetch from
+ * @param {object} options - Fetch options
+ * @param {number} maxRetries - Maximum number of retries (default: 2)
+ * @param {number} initialDelay - Initial delay in ms (default: 500)
+ * @returns {Promise<Response>} The fetch response
+ */
+async function fetchWithRetry(url, options = {}, maxRetries = 2, initialDelay = 500) {
+  let lastError;
+  let delay = initialDelay;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      console.debug(`[API] Attempt ${attempt + 1}/${maxRetries + 1} for ${options.method || 'GET'} ${url}`);
+      const res = await fetch(url, options);
+      
+      // Don't retry on 4xx errors (client errors) - only on 5xx or network errors
+      if (!res.ok && res.status >= 400 && res.status < 500) {
+        return res; // Return bad response immediately for client errors
+      }
+      
+      return res;
+    } catch (err) {
+      lastError = err;
+      console.warn(`[API] Request failed (attempt ${attempt + 1}): ${err.message}`);
+      
+      if (attempt < maxRetries) {
+        console.debug(`[API] Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+      }
+    }
+  }
+
+  throw lastError || new Error("Network request failed after retries");
+}
+
+/**
  * Login a user
  * @param {string} email
  * @param {string} password
@@ -68,6 +106,8 @@ export async function register(fullName, email, password, confirmPassword) {
 
 /**
  * Get all appointments (for admin)
+ * @returns {Promise<Array>} Array of appointment objects
+ * @throws {Error} with descriptive error message
  */
 export async function getAllAppointments() {
   try {
@@ -77,25 +117,51 @@ export async function getAllAppointments() {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const res = await fetch(`${API_URL}/appointments`, {
+    console.log("[API] Fetching all appointments from:", `${API_URL}/appointments`);
+    const res = await fetchWithRetry(`${API_URL}/appointments`, {
       method: "GET",
       headers: headers
-    });
+    }, 2);
 
     if (!res.ok) {
-      const errorData = await res.text();
-      console.error("Fetch error:", res.status, errorData);
-      throw new Error(`Failed to fetch appointments (${res.status})`);
+      let errorMessage = `Server error: ${res.status}`;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        const errorText = await res.text();
+        if (errorText) {
+          errorMessage = errorText.substring(0, 200); // Limit error message length
+        }
+      }
+      
+      console.error("[API] Fetch failed with status", res.status, ":", errorMessage);
+      
+      if (res.status === 500) {
+        throw new Error("Server error: The backend encountered an issue. Please try again in a moment.");
+      } else if (res.status === 401 || res.status === 403) {
+        throw new Error("Access denied. Please log in again.");
+      } else if (res.status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+      
+      throw new Error(errorMessage || "Failed to fetch appointments");
     }
 
-    return await res.json();
+    const data = await res.json();
+    console.log("[API] Successfully fetched appointments, count:", data.length);
+    return data;
   } catch (err) {
-    throw new Error(err.message || "Network error");
+    console.error("[API] getAllAppointments error:", err.message);
+    throw new Error(err.message || "Network error: Unable to reach the server");
   }
 }
 
 /**
  * Get appointments for a specific user
+ * @param {number} userId - The user ID
+ * @returns {Promise<Array>} Array of appointment objects
+ * @throws {Error} with descriptive error message
  */
 export async function getUserAppointments(userId) {
   try {
@@ -105,20 +171,43 @@ export async function getUserAppointments(userId) {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const res = await fetch(`${API_URL}/appointments/user/${userId}`, {
+    console.log("[API] Fetching appointments for user:", userId);
+    const res = await fetchWithRetry(`${API_URL}/appointments/user/${userId}`, {
       method: "GET",
       headers: headers
-    });
+    }, 2);
 
     if (!res.ok) {
-      const errorData = await res.text();
-      console.error("Fetch error:", res.status, errorData);
-      throw new Error(`Failed to fetch appointments (${res.status})`);
+      let errorMessage = `Server error: ${res.status}`;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        const errorText = await res.text();
+        if (errorText) {
+          errorMessage = errorText.substring(0, 200);
+        }
+      }
+      
+      console.error("[API] Fetch failed with status", res.status, ":", errorMessage);
+      
+      if (res.status === 404) {
+        throw new Error("User not found");
+      } else if (res.status === 500) {
+        throw new Error("Server error: The backend encountered an issue. Please try again in a moment.");
+      } else if (res.status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+      
+      throw new Error(errorMessage || "Failed to fetch appointments");
     }
 
-    return await res.json();
+    const data = await res.json();
+    console.log("[API] Successfully fetched user appointments, count:", data.length);
+    return data;
   } catch (err) {
-    throw new Error(err.message || "Network error");
+    console.error("[API] getUserAppointments error:", err.message);
+    throw new Error(err.message || "Network error: Unable to reach the server");
   }
 }
 

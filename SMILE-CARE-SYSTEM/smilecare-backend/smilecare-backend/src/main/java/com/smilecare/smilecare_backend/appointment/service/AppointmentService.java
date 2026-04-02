@@ -1,6 +1,7 @@
 package com.smilecare.smilecare_backend.appointment.service;
 
 import com.smilecare.smilecare_backend.appointment.dto.AppointmentRequest;
+import com.smilecare.smilecare_backend.appointment.dto.AppointmentResponseDTO;
 import com.smilecare.smilecare_backend.appointment.model.Appointment;
 import com.smilecare.smilecare_backend.appointment.model.AppointmentStatus;
 import com.smilecare.smilecare_backend.appointment.repository.AppointmentRepository;
@@ -13,11 +14,13 @@ import com.smilecare.smilecare_backend.timeslot.model.TimeSlotStatus;
 import com.smilecare.smilecare_backend.timeslot.repository.TimeSlotRepository;
 import com.smilecare.smilecare_backend.common.service.ClinicHoursService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.logging.Logger;
 
 @Service
+@Transactional
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
@@ -41,8 +44,22 @@ public class AppointmentService {
         this.clinicHoursService = clinicHoursService;
     }
 
-    public List<Appointment> getAllAppointments() {
-        return appointmentRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<AppointmentResponseDTO> getAllAppointments() {
+        try {
+            logger.info("📋 Fetching all appointments with eager loading");
+            // ✅ Use custom query with JOIN FETCH to eagerly load all relationships
+            List<Appointment> appointments = appointmentRepository.findAllWithRelationships();
+            logger.info("📦 Loaded " + appointments.size() + " appointments from database");
+            // ✅ Convert to DTOs while still inside transaction (no lazy-loading needed)
+            List<AppointmentResponseDTO> dtos = convertToDTOs(appointments);
+            logger.info("✅ Converted to DTOs: " + dtos.size());
+            return dtos;
+        } catch (Exception e) {
+            logger.severe("❌ Error in getAllAppointments: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to fetch appointments: " + e.getMessage(), e);
+        }
     }
 
     public Appointment bookAppointment(AppointmentRequest request) {
@@ -147,7 +164,113 @@ public class AppointmentService {
         }
     }
 
-    public List<Appointment> getAppointmentsByUser(Long userId) {
-        return appointmentRepository.findByPatientId(userId);
+    @Transactional(readOnly = true)
+    public List<AppointmentResponseDTO> getAppointmentsByUser(Long userId) {
+        try {
+            logger.info("📋 Fetching appointments for user " + userId + " with eager loading");
+            // ✅ Use custom query with JOIN FETCH to eagerly load all relationships
+            List<Appointment> appointments = appointmentRepository.findByPatientIdWithRelationships(userId);
+            logger.info("📦 Loaded " + appointments.size() + " appointments from database");
+            // ✅ Convert to DTOs while still inside transaction (no lazy-loading needed)
+            List<AppointmentResponseDTO> dtos = convertToDTOs(appointments);
+            logger.info("✅ Converted to DTOs: " + dtos.size());
+            return dtos;
+        } catch (Exception e) {
+            logger.severe("❌ Error in getAppointmentsByUser: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to fetch appointments for user: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Convert Appointment entity to AppointmentResponseDTO
+     * Excludes sensitive data like profilePhoto
+     */
+    private AppointmentResponseDTO convertToDTO(Appointment appointment) {
+        if (appointment == null) {
+            return null;
+        }
+
+        AppointmentResponseDTO.UserDTO patientDTO = null;
+        if (appointment.getPatient() != null) {
+            patientDTO = new AppointmentResponseDTO.UserDTO(
+                appointment.getPatient().getId(),
+                appointment.getPatient().getFullName(),
+                appointment.getPatient().getEmail(),
+                appointment.getPatient().getRole().name()
+            );
+        }
+
+        AppointmentResponseDTO.UserDTO adminDTO = null;
+        if (appointment.getProcessedByAdmin() != null) {
+            adminDTO = new AppointmentResponseDTO.UserDTO(
+                appointment.getProcessedByAdmin().getId(),
+                appointment.getProcessedByAdmin().getFullName(),
+                appointment.getProcessedByAdmin().getEmail(),
+                appointment.getProcessedByAdmin().getRole().name()
+            );
+        }
+
+        AppointmentResponseDTO.ServiceDTO serviceDTO = null;
+        if (appointment.getService() != null) {
+            serviceDTO = new AppointmentResponseDTO.ServiceDTO(
+                appointment.getService().getId(),
+                appointment.getService().getName(),
+                appointment.getService().getDescription(),
+                appointment.getService().getPrice(),
+                appointment.getService().getDuration(),
+                appointment.getService().getIcon()
+            );
+        }
+
+        AppointmentResponseDTO.TimeSlotDTO timeSlotDTO = null;
+        if (appointment.getTimeSlot() != null) {
+            AppointmentResponseDTO.ServiceDTO slotServiceDTO = null;
+            if (appointment.getTimeSlot().getService() != null) {
+                slotServiceDTO = new AppointmentResponseDTO.ServiceDTO(
+                    appointment.getTimeSlot().getService().getId(),
+                    appointment.getTimeSlot().getService().getName(),
+                    appointment.getTimeSlot().getService().getDescription(),
+                    appointment.getTimeSlot().getService().getPrice(),
+                    appointment.getTimeSlot().getService().getDuration(),
+                    appointment.getTimeSlot().getService().getIcon()
+                );
+            }
+
+            timeSlotDTO = new AppointmentResponseDTO.TimeSlotDTO(
+                appointment.getTimeSlot().getId(),
+                slotServiceDTO,
+                appointment.getTimeSlot().getDate(),
+                appointment.getTimeSlot().getStartTime(),
+                appointment.getTimeSlot().getEndTime(),
+                appointment.getTimeSlot().getStatus().name()
+            );
+        }
+
+        return new AppointmentResponseDTO(
+            appointment.getId(),
+            patientDTO,
+            adminDTO,
+            serviceDTO,
+            timeSlotDTO,
+            appointment.getStatus().name(),
+            appointment.getCreatedAt()
+        );
+    }
+
+    /**
+     * Convert list of Appointments to DTOs
+     * All lazy-loading should be complete at this point due to JOIN FETCH
+     */
+    public List<AppointmentResponseDTO> convertToDTOs(List<Appointment> appointments) {
+        try {
+            return appointments.stream()
+                .map(this::convertToDTO)
+                .toList();
+        } catch (Exception e) {
+            logger.severe("Error converting appointments to DTOs: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to convert appointments to DTOs: " + e.getMessage(), e);
+        }
     }
 }
