@@ -2,7 +2,18 @@
 import { useState, useEffect } from "react";
 import { getClinicHours, updateClinicHours } from "../api/api.js";
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+// Days of the week in calendar order (Sunday-Saturday)
+// But backend stores: 0=Monday, 1=Tuesday, ..., 5=Saturday, 6=Sunday
+// So we map: This array shows which backend day index corresponds to each calendar day
+const DAY_MAPPING = [
+  { label: "Sunday", backendIndex: 6 },
+  { label: "Monday", backendIndex: 0 },
+  { label: "Tuesday", backendIndex: 1 },
+  { label: "Wednesday", backendIndex: 2 },
+  { label: "Thursday", backendIndex: 3 },
+  { label: "Friday", backendIndex: 4 },
+  { label: "Saturday", backendIndex: 5 }
+];
 
 export default function AdminAvailabilityPage() {
   const [hours, setHours] = useState([]);
@@ -29,10 +40,10 @@ export default function AdminAvailabilityPage() {
     }
   };
 
-  const handleSave = async (dayOfWeek, config) => {
+  const handleSave = async (backendDayIndex, config) => {
     try {
       setError(null);
-      await updateClinicHours(dayOfWeek, config);
+      await updateClinicHours(backendDayIndex, config);
       setSuccessMsg("Clinic hours updated successfully!");
       setTimeout(() => setSuccessMsg(null), 3000);
       setEditingDay(null);
@@ -69,20 +80,19 @@ export default function AdminAvailabilityPage() {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {DAYS.map((dayName, dayOfWeek) => {
-          const dayConfig = hours.find(h => h.dayOfWeek === dayOfWeek);
-          const isOpen = dayConfig?.isOperating ?? true;
+        {DAY_MAPPING.map(({ label, backendIndex }) => {
+          const dayConfig = hours.find(h => h.dayOfWeek === backendIndex);
           
           return (
             <AvailabilityCard
-              key={dayOfWeek}
-              dayOfWeek={dayOfWeek}
-              dayName={dayName}
+              key={backendIndex}
+              backendIndex={backendIndex}
+              dayName={label}
               config={dayConfig}
-              isEditing={editingDay === dayOfWeek}
-              onEdit={() => setEditingDay(dayOfWeek)}
+              isEditing={editingDay === backendIndex}
+              onEdit={() => setEditingDay(backendIndex)}
               onCancel={() => setEditingDay(null)}
-              onSave={(config) => handleSave(dayOfWeek, config)}
+              onSave={(config) => handleSave(backendIndex, config)}
             />
           );
         })}
@@ -91,7 +101,7 @@ export default function AdminAvailabilityPage() {
   );
 }
 
-function AvailabilityCard({ dayOfWeek, dayName, config, isEditing, onEdit, onCancel, onSave }) {
+function AvailabilityCard({ backendIndex, dayName, config, isEditing, onEdit, onCancel, onSave }) {
   const [form, setForm] = useState({
     isOperating: config?.isOperating ?? true,
     morningStart: config?.morningStart ?? "09:00",
@@ -116,101 +126,262 @@ function AvailabilityCard({ dayOfWeek, dayName, config, isEditing, onEdit, onCan
     });
   };
 
+  // Enhanced UI with better visual feedback
+  const styles = {
+    card: {
+      padding: "16px",
+      backgroundColor: isOpen ? "#ffffff" : "#f9f9f9",
+      borderLeft: isOpen ? "4px solid var(--mint)" : "4px solid #ddd",
+      borderRadius: "8px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      transition: "all 0.2s",
+    },
+    dayLabel: {
+      fontWeight: "700",
+      fontSize: "16px",
+      color: "var(--navy)",
+      marginBottom: "8px",
+    },
+    hoursText: {
+      fontSize: "13px",
+      color: isOpen ? "var(--gray)" : "#999",
+      lineHeight: "1.6",
+    },
+    editButton: {
+      padding: "8px 16px",
+      background: "var(--mint)",
+      color: "white",
+      border: "none",
+      borderRadius: "6px",
+      fontWeight: "600",
+      cursor: "pointer",
+      fontSize: "13px",
+      whiteSpace: "nowrap",
+    }
+  };
+
   if (isEditing) {
     return (
-      <div className="card" style={{ padding: "20px" }}>
-        <div style={{ marginBottom: "16px" }}>
-          <h3 style={{ margin: "0 0 12px 0" }}>{dayName}</h3>
-          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+      <div className="card" style={{ padding: "24px", backgroundColor: "rgba(78, 203, 166, 0.02)" }}>
+        {/* Header */}
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          marginBottom: "20px",
+          paddingBottom: "16px",
+          borderBottom: "1px solid #eee"
+        }}>
+          <h3 style={{ margin: 0, color: "var(--navy)", fontSize: "18px" }}>
+            {dayName}
+          </h3>
+          <div style={{ fontSize: "12px", color: "var(--gray)", fontStyle: "italic" }}>
+            Click Save to apply changes
+          </div>
+        </div>
+
+        {/* Open/Closed Toggle */}
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "12px", 
+            cursor: "pointer",
+            padding: "12px",
+            backgroundColor: "white",
+            borderRadius: "6px",
+            border: "1px solid #eee",
+            transition: "all 0.2s"
+          }}>
             <input
               type="checkbox"
               checked={isOpen}
               onChange={(e) => handleChange("isOperating", e.target.checked)}
-              style={{ width: "18px", height: "18px", cursor: "pointer" }}
+              style={{ 
+                width: "20px", 
+                height: "20px", 
+                cursor: "pointer",
+                accentColor: "var(--mint)"
+              }}
             />
-            <span style={{ fontSize: "14px", color: "var(--navy)" }}>
+            <span style={{ fontSize: "15px", fontWeight: "600", color: "var(--navy)" }}>
               {isOpen ? "✓ Clinic is OPEN" : "✗ Clinic is CLOSED"}
             </span>
           </label>
         </div>
 
+        {/* Time inputs (only show if open) */}
         {isOpen && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-            <div>
-              <label style={{ fontSize: "12px", fontWeight: "700", color: "var(--navy)", textTransform: "uppercase" }}>
-                Morning Start
-              </label>
-              <input
-                type="time"
-                value={form.morningStart}
-                onChange={(e) => handleChange("morningStart", e.target.value)}
-                style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ccc", marginTop: "4px" }}
-              />
+          <div style={{ marginBottom: "20px" }}>
+            <div style={{ 
+              fontSize: "12px", 
+              fontWeight: "700", 
+              color: "var(--navy)", 
+              textTransform: "uppercase",
+              marginBottom: "12px",
+              letterSpacing: "0.5px"
+            }}>
+              Working Hours
             </div>
-            <div>
-              <label style={{ fontSize: "12px", fontWeight: "700", color: "var(--navy)", textTransform: "uppercase" }}>
-                Morning End
-              </label>
-              <input
-                type="time"
-                value={form.morningEnd}
-                onChange={(e) => handleChange("morningEnd", e.target.value)}
-                style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ccc", marginTop: "4px" }}
-              />
+            
+            {/* Morning Session */}
+            <div style={{ 
+              marginBottom: "16px", 
+              padding: "12px", 
+              backgroundColor: "white",
+              borderRadius: "6px",
+              border: "1px solid #eee"
+            }}>
+              <div style={{ 
+                fontSize: "11px", 
+                fontWeight: "700", 
+                color: "var(--gray)", 
+                textTransform: "uppercase",
+                marginBottom: "8px"
+              }}>
+                🌅 Morning Session
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "var(--navy)" }}>
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    value={form.morningStart}
+                    onChange={(e) => handleChange("morningStart", e.target.value)}
+                    style={{ 
+                      width: "100%", 
+                      padding: "8px", 
+                      borderRadius: "4px", 
+                      border: "1px solid #ccc", 
+                      marginTop: "4px",
+                      fontSize: "13px",
+                      fontFamily: "monospace"
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "var(--navy)" }}>
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    value={form.morningEnd}
+                    onChange={(e) => handleChange("morningEnd", e.target.value)}
+                    style={{ 
+                      width: "100%", 
+                      padding: "8px", 
+                      borderRadius: "4px", 
+                      border: "1px solid #ccc", 
+                      marginTop: "4px",
+                      fontSize: "13px",
+                      fontFamily: "monospace"
+                    }}
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <label style={{ fontSize: "12px", fontWeight: "700", color: "var(--navy)", textTransform: "uppercase" }}>
-                Afternoon Start
-              </label>
-              <input
-                type="time"
-                value={form.afternoonStart}
-                onChange={(e) => handleChange("afternoonStart", e.target.value)}
-                style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ccc", marginTop: "4px" }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: "12px", fontWeight: "700", color: "var(--navy)", textTransform: "uppercase" }}>
-                Afternoon End
-              </label>
-              <input
-                type="time"
-                value={form.afternoonEnd}
-                onChange={(e) => handleChange("afternoonEnd", e.target.value)}
-                style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ccc", marginTop: "4px" }}
-              />
+
+            {/* Afternoon Session */}
+            <div style={{ 
+              padding: "12px", 
+              backgroundColor: "white",
+              borderRadius: "6px",
+              border: "1px solid #eee"
+            }}>
+              <div style={{ 
+                fontSize: "11px", 
+                fontWeight: "700", 
+                color: "var(--gray)", 
+                textTransform: "uppercase",
+                marginBottom: "8px"
+              }}>
+                🌥️ Afternoon Session
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "var(--navy)" }}>
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    value={form.afternoonStart}
+                    onChange={(e) => handleChange("afternoonStart", e.target.value)}
+                    style={{ 
+                      width: "100%", 
+                      padding: "8px", 
+                      borderRadius: "4px", 
+                      border: "1px solid #ccc", 
+                      marginTop: "4px",
+                      fontSize: "13px",
+                      fontFamily: "monospace"
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "var(--navy)" }}>
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    value={form.afternoonEnd}
+                    onChange={(e) => handleChange("afternoonEnd", e.target.value)}
+                    style={{ 
+                      width: "100%", 
+                      padding: "8px", 
+                      borderRadius: "4px", 
+                      border: "1px solid #ccc", 
+                      marginTop: "4px",
+                      fontSize: "13px",
+                      fontFamily: "monospace"
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
+        {/* Action Buttons */}
+        <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
           <button
             onClick={handleSave}
             style={{
               flex: 1,
-              padding: "10px",
+              padding: "12px",
               background: "var(--mint)",
               color: "white",
               border: "none",
               borderRadius: "6px",
               fontWeight: "600",
               cursor: "pointer",
+              fontSize: "14px",
+              transition: "opacity 0.2s",
             }}
+            onMouseEnter={(e) => e.target.style.opacity = "0.9"}
+            onMouseLeave={(e) => e.target.style.opacity = "1"}
           >
-            ✓ Save
+            ✓ Save Changes
           </button>
           <button
             onClick={onCancel}
             style={{
               flex: 1,
-              padding: "10px",
+              padding: "12px",
               background: "#f0f0f0",
               color: "var(--navy)",
-              border: "none",
+              border: "1px solid #ddd",
               borderRadius: "6px",
               fontWeight: "600",
               cursor: "pointer",
+              fontSize: "14px",
+              transition: "opacity 0.2s",
             }}
+            onMouseEnter={(e) => e.target.style.opacity = "0.8"}
+            onMouseLeave={(e) => e.target.style.opacity = "1"}
           >
             ✕ Cancel
           </button>
@@ -219,11 +390,14 @@ function AvailabilityCard({ dayOfWeek, dayName, config, isEditing, onEdit, onCan
     );
   }
 
+  // View mode (compact display)
   return (
-    <div className="card" style={{ padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <div>
-        <div style={{ fontWeight: "700", color: "var(--navy)", marginBottom: "6px" }}>{dayName}</div>
-        <div style={{ fontSize: "13px", color: "var(--gray)" }}>
+    <div style={styles.card}>
+      <div style={{ flex: 1 }}>
+        <div style={styles.dayLabel}>
+          {dayName}
+        </div>
+        <div style={styles.hoursText}>
           {config?.isOperating ? (
             <>
               {config.morningStart && config.morningEnd && (
@@ -232,23 +406,27 @@ function AvailabilityCard({ dayOfWeek, dayName, config, isEditing, onEdit, onCan
               {config.afternoonStart && config.afternoonEnd && (
                 <div>🌥️ {config.afternoonStart} – {config.afternoonEnd}</div>
               )}
+              {(!config.morningStart || !config.afternoonStart) && (
+                <div style={{ color: "#999", fontSize: "12px" }}>
+                  (Partial hours configured)
+                </div>
+              )}
             </>
           ) : (
-            <div style={{ color: "#666" }}>🚫 Closed</div>
+            <div style={{ color: "#c00", fontWeight: "600" }}>🚫 Clinic Closed</div>
           )}
         </div>
       </div>
       <button
         onClick={onEdit}
-        style={{
-          padding: "8px 16px",
-          background: "var(--mint)",
-          color: "white",
-          border: "none",
-          borderRadius: "6px",
-          fontWeight: "600",
-          cursor: "pointer",
-          fontSize: "13px",
+        style={styles.editButton}
+        onMouseEnter={(e) => {
+          e.target.style.opacity = "0.9";
+          e.target.style.transform = "translateY(-1px)";
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.opacity = "1";
+          e.target.style.transform = "translateY(0)";
         }}
       >
         ✏️ Edit

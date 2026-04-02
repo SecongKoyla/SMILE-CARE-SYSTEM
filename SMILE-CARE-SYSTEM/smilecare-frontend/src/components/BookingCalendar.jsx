@@ -150,7 +150,7 @@ export default function BookingCalendar({
         gap: "4px",
         marginBottom: "8px"
       }}>
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
           <div
             key={day}
             style={{
