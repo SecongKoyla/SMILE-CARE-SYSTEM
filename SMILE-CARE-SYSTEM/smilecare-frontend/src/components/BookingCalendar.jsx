@@ -13,6 +13,27 @@ export default function BookingCalendar({
   const today = new Date();
   const maxDate = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000); // 60 days from now
 
+  /**
+   * Convert military time (HH:MM) to 12-hour format with AM/PM
+   * Examples: "09:00" → "9:00 AM", "14:00" → "2:00 PM"
+   */
+  const formatTimeToAMPM = (timeStr) => {
+    if (!timeStr) return "";
+    
+    const [hours, minutes] = timeStr.split(':');
+    let hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    
+    // Convert to 12-hour format
+    if (hour > 12) {
+      hour = hour - 12;
+    } else if (hour === 0) {
+      hour = 12;
+    }
+    
+    return `${hour}:${minutes} ${ampm}`;
+  };
+
   const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
 
   const getDaysInMonth = (date) => {
@@ -235,7 +256,7 @@ export default function BookingCalendar({
                   transition: "all 0.2s"
                 }}
               >
-                🕐 {slot.startTime}
+                🕐 {formatTimeToAMPM(slot.startTime)}
               </button>
             ))}
           </div>

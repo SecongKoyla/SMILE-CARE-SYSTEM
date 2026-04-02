@@ -1,5 +1,6 @@
 package com.smilecare.smilecare_backend.timeslot.service;
 
+import com.smilecare.smilecare_backend.common.model.ClinicHours;
 import com.smilecare.smilecare_backend.timeslot.model.TimeSlot;
 import com.smilecare.smilecare_backend.timeslot.model.TimeSlotStatus;
 import com.smilecare.smilecare_backend.timeslot.dto.TimeSlotDTO;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -18,11 +20,15 @@ public class TimeSlotService {
 
     private final TimeSlotRepository timeSlotRepository;
     private final ClinicHoursService clinicHoursService;
+    private final SlotGenerationService slotGenerationService;
     private static final Logger logger = Logger.getLogger(TimeSlotService.class.getName());
 
-    public TimeSlotService(TimeSlotRepository timeSlotRepository, ClinicHoursService clinicHoursService) {
+    public TimeSlotService(TimeSlotRepository timeSlotRepository, 
+                          ClinicHoursService clinicHoursService,
+                          SlotGenerationService slotGenerationService) {
         this.timeSlotRepository = timeSlotRepository;
         this.clinicHoursService = clinicHoursService;
+        this.slotGenerationService = slotGenerationService;
     }
 
     /**
@@ -41,9 +47,13 @@ public class TimeSlotService {
             // Fetch available slots from today onwards using database query
             List<TimeSlot> slots = timeSlotRepository.findAvailableFromDate(today);
             
-            // Filter by clinic operating hours
+            // Load clinic hours ONCE (1 query or 0 if cached)
+            Map<Integer, ClinicHours> cachedClinicHours = clinicHoursService.getAllClinicHoursCached();
+            logger.info("✅ Loaded clinic hours from cache");
+            
+            // Filter using pre-loaded hours (NO additional queries)
             List<TimeSlotDTO> result = slots.stream()
-                    .filter(this::isTimeSlotDayOpen)
+                    .filter(slot -> isTimeSlotDayOpen(slot, cachedClinicHours))
                     .map(TimeSlotDTO::new)
                     .collect(Collectors.toList());
             
@@ -74,9 +84,13 @@ public class TimeSlotService {
             // Fetch available slots for this service from today onwards using database query
             List<TimeSlot> slots = timeSlotRepository.findAvailableByServiceFromDate(serviceId, today);
             
-            // Filter by clinic operating hours
+            // Load clinic hours ONCE (1 query or 0 if cached)
+            Map<Integer, ClinicHours> cachedClinicHours = clinicHoursService.getAllClinicHoursCached();
+            logger.info("✅ Loaded clinic hours from cache");
+            
+            // Filter using pre-loaded hours (NO additional queries)
             List<TimeSlotDTO> result = slots.stream()
-                    .filter(this::isTimeSlotDayOpen)
+                    .filter(slot -> isTimeSlotDayOpen(slot, cachedClinicHours))
                     .map(TimeSlotDTO::new)
                     .collect(Collectors.toList());
             
@@ -94,11 +108,12 @@ public class TimeSlotService {
 
     /**
      * Get available time slots for a specific service and date
+     * DYNAMICALLY generates hourly slots based on clinic hours
      */
     @Transactional(readOnly = true)
     public List<TimeSlotDTO> getAvailableTimeSlotsByServiceAndDate(Long serviceId, LocalDate date) {
         try {
-            logger.info("📅 Fetching available time slots for service " + serviceId + " on date " + date);
+            logger.info("📅 Generating hourly slots for service " + serviceId + " on date " + date);
             
             if (serviceId == null || serviceId <= 0) {
                 throw new IllegalArgumentException("Invalid service ID: " + serviceId);
@@ -110,25 +125,28 @@ public class TimeSlotService {
             
             if (date.isBefore(LocalDate.now())) {
                 logger.fine("ℹ️ Requested date is in the past: " + date);
-                return List.of(); // Return empty list for past dates
+                return List.of();
             }
             
-            // Fetch available slots for this service and date using database query
-            List<TimeSlot> slots = timeSlotRepository.findAvailableByServiceAndDate(serviceId, date);
+            // Get clinic hours for this date
+            int javaDayOfWeek = date.getDayOfWeek().getValue();
+            int clinicDayOfWeek = javaDayOfWeek == 7 ? 6 : javaDayOfWeek - 1;
             
-            // Filter by clinic operating hours
-            List<TimeSlotDTO> result = slots.stream()
-                    .filter(this::isTimeSlotDayOpen)
-                    .map(TimeSlotDTO::new)
-                    .collect(Collectors.toList());
+            ClinicHours clinicHours = clinicHoursService.getClinicHoursForDay(clinicDayOfWeek);
             
-            logger.info("✅ Found " + result.size() + " available time slots for service " + serviceId + " on " + date);
-            return result;
+            if (clinicHours == null || !clinicHours.getIsOperating()) {
+                logger.info("ℹ️ Clinic closed on " + date);
+                return List.of();
+            }
+            
+            // Dynamically generate hourly slots
+            return slotGenerationService.generateHourlySlots(serviceId, date, clinicHours);
+            
         } catch (IllegalArgumentException e) {
             logger.warning("⚠️ Invalid argument: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            logger.severe("❌ Error fetching available time slots: " + e.getMessage());
+            logger.severe("❌ Error generating hourly slots: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to fetch available time slots: " + e.getMessage(), e);
         }
@@ -154,9 +172,13 @@ public class TimeSlotService {
             // Fetch available slots for this date using database query
             List<TimeSlot> slots = timeSlotRepository.findAvailableByDate(date);
             
-            // Filter by clinic operating hours
+            // Load clinic hours ONCE (1 query or 0 if cached)
+            Map<Integer, ClinicHours> cachedClinicHours = clinicHoursService.getAllClinicHoursCached();
+            logger.info("✅ Loaded clinic hours from cache");
+            
+            // Filter using pre-loaded hours (NO additional queries)
             List<TimeSlotDTO> result = slots.stream()
-                    .filter(this::isTimeSlotDayOpen)
+                    .filter(slot -> isTimeSlotDayOpen(slot, cachedClinicHours))
                     .map(TimeSlotDTO::new)
                     .collect(Collectors.toList());
             
@@ -197,28 +219,35 @@ public class TimeSlotService {
      * Day mapping: Monday=1, Tuesday=2, ..., Sunday=7 (Java's DayOfWeek)
      * Clinic mapping: Monday=0, Tuesday=1, ..., Sunday=6 (Database)
      */
-    private boolean isTimeSlotDayOpen(TimeSlot timeSlot) {
+    /**
+     * NEW METHOD OVERLOAD: Accept pre-loaded clinic hours to avoid N+1 queries
+     */
+    private boolean isTimeSlotDayOpen(TimeSlot timeSlot, Map<Integer, ClinicHours> clinicHours) {
         if (timeSlot == null || timeSlot.getDate() == null) {
-            logger.warning("⚠️ TimeSlot has null date");
             return false;
         }
 
         try {
-            // Convert Java date's dayOfWeek to clinic hours dayOfWeek
-            int javaDayOfWeek = timeSlot.getDate().getDayOfWeek().getValue(); // Monday=1, Sunday=7
-            int clinicDayOfWeek = javaDayOfWeek == 7 ? 6 : javaDayOfWeek - 1; // Convert to 0=Monday, 6=Sunday
+            int javaDayOfWeek = timeSlot.getDate().getDayOfWeek().getValue();
+            int clinicDayOfWeek = javaDayOfWeek == 7 ? 6 : javaDayOfWeek - 1;
 
-            // Check if clinic is open on this day
-            Boolean isOpen = clinicHoursService.isClinicOpenOnDay(clinicDayOfWeek);
-            
-            if (!isOpen) {
-                logger.fine("ℹ️ TimeSlot on " + timeSlot.getDate() + " is on a closed day (dayOfWeek=" + clinicDayOfWeek + ")");
-            }
-            
+            // Use pre-loaded map (NO query)
+            ClinicHours hours = clinicHours.get(clinicDayOfWeek);
+            boolean isOpen = hours != null && hours.getIsOperating();
+
             return isOpen;
         } catch (Exception e) {
-            logger.warning("⚠️ Error checking if clinic is open: " + e.getMessage());
-            return true; // Default to allowing if there's an error
+            logger.warning("⚠️ Error checking clinic hours: " + e.getMessage());
+            return true;
         }
+    }
+
+    /**
+     * OLD METHOD: Keep for backward compatibility, but now it uses cache
+     */
+    private boolean isTimeSlotDayOpen(TimeSlot timeSlot) {
+        // Load cached clinic hours (0 queries)
+        Map<Integer, ClinicHours> cached = clinicHoursService.getAllClinicHoursCached();
+        return isTimeSlotDayOpen(timeSlot, cached);
     }
 }

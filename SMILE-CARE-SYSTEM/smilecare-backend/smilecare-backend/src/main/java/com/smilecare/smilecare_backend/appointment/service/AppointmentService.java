@@ -76,9 +76,32 @@ public class AppointmentService {
                 .orElseThrow(() -> new RuntimeException("Service not found"));
         logger.info("   ✓ Service found: " + service.getName());
 
-        TimeSlot timeSlot = timeSlotRepository.findById(request.getTimeSlotId())
-                .orElseThrow(() -> new RuntimeException("Time slot not found"));
-        logger.info("   ✓ TimeSlot found: " + timeSlot.getDate() + " " + timeSlot.getStartTime());
+        // 🔵 HANDLE TEMPORARY SLOTS (Negative IDs from frontend dynamic generation)
+        TimeSlot timeSlot;
+        
+        if (request.getTimeSlotId() < 0) {
+            // Temporary slot generated on frontend - create it now
+            logger.info("   🔵 Creating temporary slot (ID: " + request.getTimeSlotId() + ")");
+            
+            if (request.getStartTime() == null || request.getEndTime() == null || request.getAppointmentDate() == null) {
+                throw new RuntimeException("For temporary slots, startTime, endTime, and appointmentDate are required");
+            }
+            
+            timeSlot = new TimeSlot();
+            timeSlot.setService(service);
+            timeSlot.setDate(request.getAppointmentDate());
+            timeSlot.setStartTime(request.getStartTime());
+            timeSlot.setEndTime(request.getEndTime());
+            timeSlot.setStatus(TimeSlotStatus.AVAILABLE);
+            
+            logger.info("   ✓ Temporary TimeSlot created: " + request.getAppointmentDate() + " " + 
+                        request.getStartTime() + " - " + request.getEndTime());
+        } else {
+            // Existing slot from database
+            timeSlot = timeSlotRepository.findById(request.getTimeSlotId())
+                    .orElseThrow(() -> new RuntimeException("Time slot not found"));
+            logger.info("   ✓ TimeSlot found: " + timeSlot.getDate() + " " + timeSlot.getStartTime());
+        }
 
         if (timeSlot.getService() == null) {
             throw new RuntimeException("Time slot has no associated service");
@@ -97,8 +120,8 @@ public class AppointmentService {
             logger.info("   ✓ Clinic is open on " + timeSlot.getDate().getDayOfWeek());
         }
 
-        // 🔴 BUSINESS RULE 2: Prevent booking if already booked
-        if (timeSlot.getStatus() == TimeSlotStatus.BOOKED) {
+        // 🔴 BUSINESS RULE 2: Prevent booking if already booked (only for persistent slots)
+        if (request.getTimeSlotId() > 0 && timeSlot.getStatus() == TimeSlotStatus.BOOKED) {
             throw new RuntimeException("Time slot already booked!");
         }
 
@@ -108,7 +131,7 @@ public class AppointmentService {
         appointment.setTimeSlot(timeSlot);
         appointment.setStatus(AppointmentStatus.PENDING);
 
-        // 🔵 BUSINESS RULE 3: Mark time slot as booked
+        // 🔵 BUSINESS RULE 3: Mark time slot as booked and save
         timeSlot.setStatus(TimeSlotStatus.BOOKED);
         timeSlotRepository.save(timeSlot);
         logger.info("   ✓ TimeSlot marked as BOOKED");

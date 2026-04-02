@@ -1,5 +1,5 @@
 // pages/BookPage.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getAvailableTimeSlots, bookAppointment, getUserAppointments, getClinicHours } from "../api/api.js";
 import BookingCalendar from "../components/BookingCalendar.jsx";
 
@@ -13,6 +13,10 @@ export default function BookPage({ services, user, setPage, onBook }) {
   const [timeSlots, setTimeSlots] = useState([]);
   const [clinicHours, setClinicHours] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(null);
+  
+  // Debounce timer for rapid date switches
+  const dateDebounceRef = useRef(null);
 
   // Fetch clinic hours on mount
   useEffect(() => {
@@ -34,23 +38,40 @@ export default function BookPage({ services, user, setPage, onBook }) {
     }
   }, [selectedIdx]);
 
-  // Fetch time slots when a date is selected (for optimization)
+  // Fetch time slots when a date is selected with debounce (prevent rapid requests)
   useEffect(() => {
     if (selectedIdx !== null && selectedDate) {
-      fetchTimeSlots(selectedDate);
+      // Clear previous timeout
+      if (dateDebounceRef.current) {
+        clearTimeout(dateDebounceRef.current);
+      }
+      
+      // Set new timeout (wait 300ms before fetching)
+      dateDebounceRef.current = setTimeout(() => {
+        fetchTimeSlots(selectedDate);
+      }, 300);
     }
-  }, [selectedDate]);
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (dateDebounceRef.current) {
+        clearTimeout(dateDebounceRef.current);
+      }
+    };
+  }, [selectedDate, selectedIdx]);
 
   const fetchTimeSlots = async (date = null) => {
     if (selectedIdx === null) return;
     
     try {
       setError(null);
+      setLoading(true);
       const selectedService = services[selectedIdx];
       console.log("📅 Fetching slots for service:", selectedService);
       
       if (!selectedService?.id) {
         setError("Invalid service selected");
+        setLoading(false);
         return;
       }
       
@@ -75,6 +96,19 @@ export default function BookPage({ services, user, setPage, onBook }) {
       console.error("❌ Error fetching time slots:", err);
       setTimeSlots([]);
       setError(err.message || "Could not load available time slots. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefreshSlots = async () => {
+    try {
+      console.log("🔄 Manually refreshing slots...");
+      await fetchTimeSlots(selectedDate);
+      setLastRefresh(new Date());
+      console.log("✅ Slots refreshed at", new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error("Error refreshing:", error);
     }
   };
 
@@ -94,11 +128,20 @@ export default function BookPage({ services, user, setPage, onBook }) {
         throw new Error("Invalid service selected");
       }
 
-      // Book the appointment via API
+      // Find the selected time slot to get its details
+      const selectedSlot = timeSlots.find(t => t.id === selectedTimeSlotId);
+      if (!selectedSlot) {
+        throw new Error("Selected time slot not found");
+      }
+
+      // Book the appointment via API with slot details
       const bookingData = {
         patientId: user.id,
         serviceId: selectedService.id,
         timeSlotId: selectedTimeSlotId,
+        startTime: selectedSlot.startTime,      // 09:00
+        endTime: selectedSlot.endTime,          // 10:00
+        appointmentDate: selectedSlot.date,     // 2026-04-07
         status: "PENDING"
       };
 
@@ -108,7 +151,7 @@ export default function BookPage({ services, user, setPage, onBook }) {
       if (onBook) {
         onBook({
           type: selectedService.name,
-          time: timeSlots.find(t => t.id === selectedTimeSlotId)?.startTime || ""
+          time: selectedSlot.startTime || ""
         });
       }
 
@@ -204,6 +247,24 @@ export default function BookPage({ services, user, setPage, onBook }) {
             setSelectedSlotId={setSelectedTimeSlotId}
             clinicHours={clinicHours}
           />
+          <button 
+            onClick={handleRefreshSlots} 
+            style={{ 
+              marginBottom: "10px", 
+              marginTop: "10px",
+              padding: "8px 16px",
+              backgroundColor: "#f0f0f0",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "13px"
+            }}
+          >
+            🔄 Refresh Availability
+          </button>
+          <p style={{ fontSize: "12px", color: "#999", margin: "0" }}>
+            Last updated: {lastRefresh ? lastRefresh.toLocaleTimeString() : "Not yet"}
+          </p>
           {timeSlots.length === 0 && selectedDate && (
             <div className="empty-state" style={{ marginTop: "16px" }}>
               <span className="empty-icon">📅</span>

@@ -1,6 +1,8 @@
 package com.smilecare.smilecare_backend.appointment.dto;
 
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class AppointmentRequest {
 
@@ -15,6 +17,11 @@ public class AppointmentRequest {
 
     @NotNull
     private String status;
+
+    // Optional fields for temporary slots (when timeSlotId is negative)
+    private LocalTime startTime;
+    private LocalTime endTime;
+    private LocalDate appointmentDate;
 
     // Getters and Setters
 
@@ -48,5 +55,29 @@ public class AppointmentRequest {
 
     public void setStatus(@NotNull String status) {
         this.status = status;
+    }
+
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalTime endTime) {
+        this.endTime = endTime;
+    }
+
+    public LocalDate getAppointmentDate() {
+        return appointmentDate;
+    }
+
+    public void setAppointmentDate(LocalDate appointmentDate) {
+        this.appointmentDate = appointmentDate;
     }
 }
