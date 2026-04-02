@@ -115,6 +115,22 @@ export default function AdminApptsPage() {
     "COMPLETED": "confirmed"
   };
 
+  // Map filter names to actual status display names
+  // This is needed because filters use "approved" but statuses map to "confirmed"
+  const filterToStatusMap = {
+    "all": null,           // null means show all
+    "approved": "confirmed",
+    "pending": "pending",
+    "cancelled": "cancelled"
+  };
+
+  // Map for display labels (what to show in empty state and logs)
+  const filterLabelMap = {
+    "approved": "confirmed",
+    "pending": "pending",
+    "cancelled": "cancelled"
+  };
+
   const displayAppointments = appointments.map(appt => ({
     id: appt.id,
     day: new Date(appt.timeSlot.date).getDate().toString().padStart(2, '0'),
@@ -130,7 +146,7 @@ export default function AdminApptsPage() {
 
   const filtered = filter === "all"
     ? displayAppointments
-    : displayAppointments.filter(a => a.status === filter);
+    : displayAppointments.filter(a => a.status === filterToStatusMap[filter]);
 
   const counts = {
     confirmed: displayAppointments.filter(a => a.status === "confirmed").length,
@@ -188,7 +204,7 @@ export default function AdminApptsPage() {
           {filtered.length === 0 ? (
             <div className="empty-state">
               <span className="empty-icon">📋</span>
-              <p>No {filter === "all" ? "" : filter} appointments found.</p>
+              <p>No {filter === "all" ? "appointments" : `${filterLabelMap[filter]} appointments`} found.</p>
             </div>
           ) : filtered.map(a => (
             <div key={a.id} className="appt-admin-item">
