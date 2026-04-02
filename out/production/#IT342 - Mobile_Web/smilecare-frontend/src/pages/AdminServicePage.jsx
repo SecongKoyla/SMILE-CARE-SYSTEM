@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Modal from "../components/Modal.jsx";
 import { ICON_OPTIONS } from "../data/constants.js";
+import { addService, updateService, deleteService } from "../api/api.js";
 
 const EMPTY_FORM = { icon: "🦷", name: "", desc: "", price: "", duration: "" };
 
@@ -11,42 +12,75 @@ export default function AdminServicesPage({ services, setServices }) {
   const [editTarget, setEditTarget] = useState(null); // null = add mode
   const [form, setForm]             = useState(EMPTY_FORM);
   const [deleteId, setDeleteId]     = useState(null);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState(null);
 
   // ── Open add modal ──
   const openAdd = () => {
     setEditTarget(null);
     setForm(EMPTY_FORM);
     setShowModal(true);
+    setError(null);
   };
 
   // ── Open edit modal ──
   const openEdit = (service) => {
     setEditTarget(service.id);
-    setForm({ icon: service.icon, name: service.name, desc: service.desc, price: service.price, duration: service.duration });
+    setForm({ icon: service.icon, name: service.name, desc: service.description || service.desc, price: service.price, duration: service.duration });
     setShowModal(true);
+    setError(null);
   };
 
   // ── Save (add or update) ──
-  const handleSave = () => {
-    if (!form.name.trim() || !form.price.trim()) return;
-
-    if (editTarget === null) {
-      // Add new
-      const newService = { ...form, id: Date.now() };
-      setServices(prev => [...prev, newService]);
-    } else {
-      // Update existing
-      setServices(prev =>
-        prev.map(s => s.id === editTarget ? { ...s, ...form } : s)
-      );
+  const handleSave = async () => {
+    if (!form.name.trim() || !form.price.trim()) {
+      setError("Service name and price are required");
+      return;
     }
-    setShowModal(false);
+
+    setLoading(true);
+    try {
+      if (editTarget === null) {
+        // Add new service to backend
+        console.log("➕ Adding new service...");
+        const newService = await addService(form);
+        console.log("✅ Service added:", newService);
+        setServices(prev => [...prev, newService]);
+      } else {
+        // Update existing service in backend
+        console.log("✏️ Updating service...");
+        const updated = await updateService(editTarget, form);
+        console.log("✅ Service updated:", updated);
+        setServices(prev =>
+          prev.map(s => s.id === editTarget ? { ...s, ...updated } : s)
+        );
+      }
+      setShowModal(false);
+      setError(null);
+    } catch (err) {
+      console.error("❌ Error saving service:", err);
+      setError(err.message || "Failed to save service");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── Delete ──
-  const handleDelete = (id) => {
-    setServices(prev => prev.filter(s => s.id !== id));
-    setDeleteId(null);
+  const handleDelete = async (id) => {
+    setLoading(true);
+    try {
+      console.log("🗑️ Deleting service...");
+      await deleteService(id);
+      console.log("✅ Service deleted");
+      setServices(prev => prev.filter(s => s.id !== id));
+      setDeleteId(null);
+      setError(null);
+    } catch (err) {
+      console.error("❌ Error deleting service:", err);
+      setError(err.message || "Failed to delete service");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const field = (key) => ({
@@ -66,8 +100,15 @@ export default function AdminServicesPage({ services, setServices }) {
         </div>
       </div>
 
+      {/* Error message */}
+      {error && (
+        <div style={{ background: "#fee", borderLeft: "4px solid #f66", padding: "12px", borderRadius: "8px", marginBottom: "16px" }}>
+          <p style={{ color: "#c00", margin: "0", fontSize: "13px" }}>⚠️ {error}</p>
+        </div>
+      )}
+
       {/* Add button */}
-      <button className="add-service-btn" onClick={openAdd}>
+      <button className="add-service-btn" onClick={openAdd} disabled={loading}>
         <span style={{ fontSize: 20 }}>＋</span>
         Add New Service
       </button>
@@ -108,6 +149,13 @@ export default function AdminServicesPage({ services, setServices }) {
           title={editTarget === null ? "Add New Service" : "Edit Service"}
           onClose={() => setShowModal(false)}
         >
+          {/* Error in modal */}
+          {error && (
+            <div style={{ background: "#fee", borderLeft: "4px solid #f66", padding: "10px", borderRadius: "6px", marginBottom: "12px" }}>
+              <p style={{ color: "#c00", margin: "0", fontSize: "12px" }}>{error}</p>
+            </div>
+          )}
+
           {/* Icon picker */}
           <div className="sc-form-group">
             <label className="sc-label">Icon</label>
@@ -116,14 +164,16 @@ export default function AdminServicesPage({ services, setServices }) {
                 <button
                   key={ico}
                   onClick={() => setForm(p => ({ ...p, icon: ico }))}
+                  disabled={loading}
                   style={{
                     width: 40, height: 40,
                     borderRadius: 8,
                     border: form.icon === ico ? "2px solid var(--mint)" : "1.5px solid var(--gray-border)",
                     background: form.icon === ico ? "var(--mint-light)" : "var(--white)",
                     fontSize: 20,
-                    cursor: "pointer",
+                    cursor: loading ? "not-allowed" : "pointer",
                     transition: "all 0.15s",
+                    opacity: loading ? 0.6 : 1,
                   }}
                 >
                   {ico}
@@ -136,18 +186,18 @@ export default function AdminServicesPage({ services, setServices }) {
           <div className="sc-form-row">
             <div>
               <label className="sc-label">Service Name *</label>
-              <input className="sc-input" placeholder="e.g. Teeth Cleaning" {...field("name")} />
+              <input className="sc-input" placeholder="e.g. Teeth Cleaning" disabled={loading} {...field("name")} />
             </div>
             <div>
               <label className="sc-label">Price *</label>
-              <input className="sc-input" placeholder="e.g. ₱800" {...field("price")} />
+              <input className="sc-input" placeholder="e.g. ₱800" disabled={loading} {...field("price")} />
             </div>
           </div>
 
           {/* Duration */}
           <div className="sc-form-group">
             <label className="sc-label">Duration</label>
-            <input className="sc-input" placeholder="e.g. 45 min" {...field("duration")} />
+            <input className="sc-input" placeholder="e.g. 45 min" disabled={loading} {...field("duration")} />
           </div>
 
           {/* Description */}
@@ -157,6 +207,7 @@ export default function AdminServicesPage({ services, setServices }) {
               className="sc-input"
               rows={3}
               placeholder="Brief description of the service..."
+              disabled={loading}
               style={{ resize: "vertical", lineHeight: 1.6 }}
               {...field("desc")}
             />
@@ -164,16 +215,16 @@ export default function AdminServicesPage({ services, setServices }) {
 
           {/* Actions */}
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-            <button className="btn-ghost" onClick={() => setShowModal(false)} style={{ flex: 1 }}>
+            <button className="btn-ghost" onClick={() => setShowModal(false)} disabled={loading} style={{ flex: 1 }}>
               Cancel
             </button>
             <button
               className="btn-primary"
               onClick={handleSave}
-              disabled={!form.name.trim() || !form.price.trim()}
-              style={{ flex: 2 }}
+              disabled={!form.name.trim() || !form.price.trim() || loading}
+              style={{ flex: 2, opacity: loading ? 0.6 : 1 }}
             >
-              {editTarget === null ? "Add Service" : "Save Changes"}
+              {loading ? (editTarget === null ? "Adding..." : "Saving...") : (editTarget === null ? "Add Service" : "Save Changes")}
             </button>
           </div>
         </Modal>
@@ -190,19 +241,21 @@ export default function AdminServicesPage({ services, setServices }) {
             This cannot be undone.
           </p>
           <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn-ghost" onClick={() => setDeleteId(null)} style={{ flex: 1 }}>
+            <button className="btn-ghost" onClick={() => setDeleteId(null)} disabled={loading} style={{ flex: 1 }}>
               Cancel
             </button>
             <button
               onClick={() => handleDelete(deleteId)}
+              disabled={loading}
               style={{
                 flex: 2, padding: "13px 24px", border: "none",
-                borderRadius: "var(--radius-sm)", background: "var(--red-txt)",
+                borderRadius: "var(--radius-sm)", background: loading ? "#ccc" : "var(--red-txt)",
                 color: "white", fontFamily: "'Nunito', sans-serif",
-                fontSize: 14, fontWeight: 700, cursor: "pointer",
+                fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
               }}
             >
-              Delete Service
+              {loading ? "Deleting..." : "Delete Service"}
             </button>
           </div>
         </Modal>
