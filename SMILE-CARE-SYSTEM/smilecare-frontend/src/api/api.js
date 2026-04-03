@@ -236,6 +236,60 @@ export async function updateAppointmentStatus(appointmentId, status) {
 }
 
 /**
+ * Delete an appointment (admin only)
+ * @param {number} appointmentId - The appointment ID to delete
+ * @returns {Promise<Object>} Success response
+ * @throws {Error} with descriptive error message
+ */
+export async function deleteAppointment(appointmentId) {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    console.log("[API] Deleting appointment:", appointmentId);
+    const res = await fetch(`${API_URL}/appointments/${appointmentId}`, {
+      method: "DELETE",
+      headers: headers
+    });
+
+    if (!res.ok) {
+      let errorMessage = `Server error: ${res.status}`;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        const errorText = await res.text();
+        if (errorText) {
+          errorMessage = errorText.substring(0, 200);
+        }
+      }
+      
+      console.error("[API] Delete failed with status", res.status, ":", errorMessage);
+      
+      if (res.status === 404) {
+        throw new Error("Appointment not found");
+      } else if (res.status === 403) {
+        throw new Error("Access denied. Only admins can delete appointments.");
+      } else if (res.status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+      
+      throw new Error(errorMessage || "Failed to delete appointment");
+    }
+
+    const data = await res.json();
+    console.log("[API] Appointment deleted successfully");
+    return data;
+  } catch (err) {
+    console.error("[API] deleteAppointment error:", err.message);
+    throw new Error(err.message || "Network error");
+  }
+}
+
+/**
  * Format a JavaScript Date to YYYY-MM-DD string in local timezone
  * This is critical for consistent date handling between frontend and backend
  */

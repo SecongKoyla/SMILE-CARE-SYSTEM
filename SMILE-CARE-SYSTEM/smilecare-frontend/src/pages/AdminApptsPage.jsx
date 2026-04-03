@@ -2,7 +2,7 @@
 // Admin-only: view all appointments across all patients
 import { useState, useEffect } from "react";
 import AppointmentCard from "../components/AppointmentCard.jsx";
-import { getAllAppointments, updateAppointmentStatus } from "../api/api.js";
+import { getAllAppointments, updateAppointmentStatus, deleteAppointment } from "../api/api.js";
 
 const FILTERS = ["all", "approved", "pending", "cancelled"];
 
@@ -74,6 +74,21 @@ export default function AdminApptsPage() {
     }
   };
 
+  const handleDeleteAppointment = async (appointmentId, patientName) => {
+    if (!window.confirm(`Delete appointment for ${patientName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteAppointment(appointmentId);
+      console.log("✅ Appointment deleted successfully");
+      // Refresh appointments after deletion
+      await fetchAppointments();
+    } catch (err) {
+      alert("Error deleting appointment: " + err.message);
+    }
+  };
+
   if (loading) {
     return <div className="sc-main page-enter"><p>⏳ Loading appointments...</p></div>;
   }
@@ -136,7 +151,6 @@ export default function AdminApptsPage() {
     day: new Date(appt.timeSlot.date).getDate().toString().padStart(2, '0'),
     month: new Date(appt.timeSlot.date).toLocaleString('default', { month: 'short' }),
     type: appt.service.name,
-    doctor: "Dr. Rivera",
     time: appt.timeSlot.startTime,
     status: statusMap[appt.status] || appt.status.toLowerCase(),
     originalStatus: appt.status,
@@ -238,6 +252,14 @@ export default function AdminApptsPage() {
                   title="Cancel appointment"
                 >
                   ✕ Cancel
+                </button>
+                <button
+                  className="status-action delete-action"
+                  onClick={() => handleDeleteAppointment(a.id, a.patient)}
+                  title="Delete appointment"
+                  style={{ color: "#dc3545" }}
+                >
+                  🗑️ Delete
                 </button>
               </div>
             </div>

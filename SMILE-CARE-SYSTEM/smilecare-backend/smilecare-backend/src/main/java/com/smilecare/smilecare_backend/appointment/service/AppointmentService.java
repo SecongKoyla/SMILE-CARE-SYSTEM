@@ -174,6 +174,38 @@ public class AppointmentService {
         appointmentRepository.save(appointment);
     }
 
+    /**
+     * Delete an appointment completely (admin only)
+     * Removes the appointment record and frees the time slot
+     */
+    public void deleteAppointment(Long id) {
+        try {
+            logger.info("🗑️ Deleting appointment " + id);
+            
+            Appointment appointment = appointmentRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+            // 🔵 Free the time slot first (if not already booked by someone else)
+            TimeSlot timeSlot = appointment.getTimeSlot();
+            if (timeSlot != null) {
+                // Only free the slot if it's currently booked by this appointment
+                if (timeSlot.getStatus() == TimeSlotStatus.BOOKED) {
+                    timeSlot.setStatus(TimeSlotStatus.AVAILABLE);
+                    timeSlotRepository.save(timeSlot);
+                    logger.info("✅ TimeSlot freed: " + timeSlot.getId());
+                }
+            }
+
+            // Delete the appointment
+            appointmentRepository.deleteById(id);
+            logger.info("✅ Appointment deleted successfully: " + id);
+        } catch (Exception e) {
+            logger.severe("❌ Error deleting appointment: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to delete appointment: " + e.getMessage(), e);
+        }
+    }
+
     public Appointment updateAppointmentStatus(Long id, String status) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));

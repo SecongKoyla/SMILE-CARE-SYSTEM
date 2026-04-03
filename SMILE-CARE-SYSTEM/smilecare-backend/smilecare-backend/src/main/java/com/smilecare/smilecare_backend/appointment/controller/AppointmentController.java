@@ -118,6 +118,24 @@ public class AppointmentController {
         }
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteAppointment(@PathVariable Long id) {
+        try {
+            logger.info("🗑️ Deleting appointment " + id);
+            service.deleteAppointment(id);
+            return ResponseEntity.ok(Map.of("message", "Appointment deleted successfully"));
+        } catch (RuntimeException e) {
+            logger.warning("⚠️  Delete validation failed: " + e.getMessage());
+            return ResponseEntity.status(404)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            logger.severe("❌ Error deleting appointment: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "Unexpected error while deleting appointment"));
+        }
+    }
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserAppointments(@PathVariable Long userId) {
         try {
