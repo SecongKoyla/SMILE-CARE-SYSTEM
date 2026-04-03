@@ -249,28 +249,42 @@ export async function deleteAppointment(appointmentId) {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    console.log("[API] Deleting appointment:", appointmentId);
-    const res = await fetch(`${API_URL}/appointments/${appointmentId}`, {
+    console.log("[API] Deleting appointment - ID:", appointmentId, "Type:", typeof appointmentId);
+    
+    // Validate appointment ID
+    if (!appointmentId || appointmentId <= 0) {
+      console.error("[API] Invalid appointment ID:", appointmentId);
+      throw new Error("Invalid appointment ID: " + appointmentId);
+    }
+
+    const url = `${API_URL}/appointments/${appointmentId}`;
+    console.log("[API] DELETE request to:", url);
+    
+    const res = await fetch(url, {
       method: "DELETE",
       headers: headers
     });
+
+    console.log("[API] Response status:", res.status, res.statusText);
 
     if (!res.ok) {
       let errorMessage = `Server error: ${res.status}`;
       try {
         const errorData = await res.json();
         errorMessage = errorData.error || errorMessage;
+        console.log("[API] Error response data:", errorData);
       } catch {
         const errorText = await res.text();
         if (errorText) {
           errorMessage = errorText.substring(0, 200);
+          console.log("[API] Error response text:", errorText);
         }
       }
       
       console.error("[API] Delete failed with status", res.status, ":", errorMessage);
       
       if (res.status === 404) {
-        throw new Error("Appointment not found");
+        throw new Error("Appointment not found (ID: " + appointmentId + "). It may have already been deleted.");
       } else if (res.status === 403) {
         throw new Error("Access denied. Only admins can delete appointments.");
       } else if (res.status >= 500) {
@@ -281,10 +295,10 @@ export async function deleteAppointment(appointmentId) {
     }
 
     const data = await res.json();
-    console.log("[API] Appointment deleted successfully");
+    console.log("[API] ✅ Appointment deleted successfully - Response:", data);
     return data;
   } catch (err) {
-    console.error("[API] deleteAppointment error:", err.message);
+    console.error("[API] ❌ deleteAppointment error:", err.message);
     throw new Error(err.message || "Network error");
   }
 }

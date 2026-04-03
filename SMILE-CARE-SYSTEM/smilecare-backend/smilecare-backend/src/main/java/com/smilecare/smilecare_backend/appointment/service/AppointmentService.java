@@ -179,28 +179,53 @@ public class AppointmentService {
      * Removes the appointment record and frees the time slot
      */
     public void deleteAppointment(Long id) {
+        logger.info("🗑️ [Service] Starting delete operation for appointment ID: " + id);
+        
         try {
-            logger.info("🗑️ Deleting appointment " + id);
+            // Validate ID
+            if (id == null || id <= 0) {
+                throw new RuntimeException("Invalid appointment ID: " + id);
+            }
+
+            logger.info("🔍 [Service] Searching for appointment with ID: " + id);
             
             Appointment appointment = appointmentRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                    .orElseThrow(() -> {
+                        String errorMsg = "Appointment not found with ID: " + id;
+                        logger.warning("❌ [Service] " + errorMsg);
+                        return new RuntimeException(errorMsg);
+                    });
+
+            logger.info("✅ [Service] Appointment found - Patient: " + appointment.getPatient().getFullName() + 
+                       ", Service: " + appointment.getService().getName());
 
             // 🔵 Free the time slot first (if not already booked by someone else)
             TimeSlot timeSlot = appointment.getTimeSlot();
             if (timeSlot != null) {
+                logger.info("   ⏰ Processing timeSlot: " + timeSlot.getId() + ", Current status: " + timeSlot.getStatus());
+                
                 // Only free the slot if it's currently booked by this appointment
                 if (timeSlot.getStatus() == TimeSlotStatus.BOOKED) {
                     timeSlot.setStatus(TimeSlotStatus.AVAILABLE);
                     timeSlotRepository.save(timeSlot);
-                    logger.info("✅ TimeSlot freed: " + timeSlot.getId());
+                    logger.info("   ✅ TimeSlot freed and saved: " + timeSlot.getId());
+                } else {
+                    logger.info("   ⓘ TimeSlot status is already " + timeSlot.getStatus() + " (not BOOKED)");
                 }
+            } else {
+                logger.warning("   ⚠️  No timeSlot associated with appointment");
             }
 
             // Delete the appointment
+            logger.info("🗑️ [Service] Deleting appointment record from database...");
             appointmentRepository.deleteById(id);
-            logger.info("✅ Appointment deleted successfully: " + id);
+            logger.info("✅ [Service] Appointment deleted successfully from database: " + id);
+            
+        } catch (RuntimeException e) {
+            logger.severe("❌ [Service] RuntimeException during delete - ID: " + id + ", Message: " + e.getMessage());
+            throw e;
         } catch (Exception e) {
-            logger.severe("❌ Error deleting appointment: " + e.getMessage());
+            logger.severe("❌ [Service] Unexpected exception during delete - ID: " + id + ", Message: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to delete appointment: " + e.getMessage(), e);
         }
