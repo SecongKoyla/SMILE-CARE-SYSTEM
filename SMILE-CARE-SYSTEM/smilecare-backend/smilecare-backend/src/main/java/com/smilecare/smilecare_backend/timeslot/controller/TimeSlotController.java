@@ -45,7 +45,9 @@ public class TimeSlotController {
             @RequestParam(required = false) Long serviceId,
             @RequestParam(required = false) String date) {
         try {
-            List<TimeSlotDTO> slots;
+            List<TimeSlotDTO> slots = List.of();
+            
+            logger.info("🔔 TimeSlot API called - serviceId: " + serviceId + ", date: " + date);
             
             // Parse date if provided
             LocalDate selectedDate = null;
@@ -69,6 +71,7 @@ public class TimeSlotController {
                 // Only service specified
                 logger.info("📅 Fetching available time slots for service " + serviceId);
                 slots = service.getAvailableTimeSlotsByService(serviceId);
+                logger.info("📊 Service returned " + slots.size() + " slots for service " + serviceId);
             } else if (selectedDate != null) {
                 // Only date specified
                 logger.info("📅 Fetching available time slots for date " + selectedDate);

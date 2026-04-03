@@ -5,7 +5,6 @@ import com.smilecare.smilecare_backend.common.service.ClinicHoursService;
 import com.smilecare.smilecare_backend.timeslot.dto.TimeSlotDTO;
 import com.smilecare.smilecare_backend.timeslot.model.TimeSlotStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -13,7 +12,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 @Service
-@Transactional(readOnly = true)
 public class SlotGenerationService {
 
     private final ClinicHoursService clinicHoursService;

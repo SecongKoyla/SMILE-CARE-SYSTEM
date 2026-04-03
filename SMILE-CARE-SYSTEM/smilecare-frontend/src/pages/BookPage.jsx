@@ -15,6 +15,9 @@ export default function BookPage({ services, user, setPage, onBook }) {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(null);
   
+  // Abort controller for cancelling ongoing requests during rapid switches
+  const abortControllerRef = useRef(null);
+  
   // Debounce timer for rapid date switches
   const dateDebounceRef = useRef(null);
 
@@ -34,7 +37,15 @@ export default function BookPage({ services, user, setPage, onBook }) {
   // Fetch time slots when a service is selected
   useEffect(() => {
     if (selectedIdx !== null) {
-      fetchTimeSlots();
+      // Abort any previous requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      // Create new abort controller for this request
+      abortControllerRef.current = new AbortController();
+      
+      fetchTimeSlots(null, abortControllerRef.current.signal);
     }
   }, [selectedIdx]);
 
@@ -48,7 +59,12 @@ export default function BookPage({ services, user, setPage, onBook }) {
       
       // Set new timeout (wait 300ms before fetching)
       dateDebounceRef.current = setTimeout(() => {
-        fetchTimeSlots(selectedDate);
+        // Create abort controller for date-based fetch
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        fetchTimeSlots(selectedDate, abortControllerRef.current.signal);
       }, 300);
     }
     
@@ -60,11 +76,11 @@ export default function BookPage({ services, user, setPage, onBook }) {
     };
   }, [selectedDate, selectedIdx]);
 
-  const fetchTimeSlots = async (date = null) => {
+  const fetchTimeSlots = async (date = null, abortSignal = null) => {
     if (selectedIdx === null) return;
     
     try {
-      setError(null);
+      setError(null); // Clear previous errors
       setLoading(true);
       const selectedService = services[selectedIdx];
       console.log("📅 Fetching slots for service:", selectedService);
@@ -75,24 +91,41 @@ export default function BookPage({ services, user, setPage, onBook }) {
         return;
       }
       
-      // Fetch slots with optional date parameter for optimization
-      const slots = await getAvailableTimeSlots(selectedService.id, date);
+      // Fetch slots with optional date parameter and abort signal
+      const slots = await getAvailableTimeSlots(selectedService.id, date, abortSignal);
+      
+      // Check if request was aborted (user switched services before response)
+      if (abortSignal?.aborted) {
+        console.log("ℹ️ Request aborted - user switched services");
+        setLoading(false);
+        return;
+      }
+      
       console.log("📅 Received slots:", slots);
       console.log("📅 Slot count:", slots?.length || 0);
       
       if (!slots || slots.length === 0) {
         console.warn("⚠️ No slots received from backend");
         setTimeSlots([]);
+        
+        // Only show error if a specific date was selected (not on initial service selection)
         if (date) {
           setError("No available time slots for this date. Please select another date.");
-        } else {
-          setError("No available time slots for this service yet.");
         }
+        // Don't show error for initial service selection - backend will generate slots for next 14 days
       } else {
         setTimeSlots(slots);
+        setError(null); // Clear any previous error
         console.log("✅ TimeSlots set successfully");
       }
     } catch (err) {
+      // Don't log/display error if request was aborted (normal during rapid switching)
+      if (err.name === "AbortError") {
+        console.log("ℹ️ Request was cancelled (user switched services)");
+        setLoading(false);
+        return;
+      }
+      
       console.error("❌ Error fetching time slots:", err);
       setTimeSlots([]);
       setError(err.message || "Could not load available time slots. Please try again.");
@@ -220,7 +253,15 @@ export default function BookPage({ services, user, setPage, onBook }) {
               <div
                 key={s.id}
                 className={`book-service-card${selectedIdx === i ? " selected" : ""}`}
-                onClick={() => { setSelectedIdx(i); setSelectedTimeSlotId(null); }}
+                onClick={() => { 
+                  // Abort any pending requests when switching services
+                  if (abortControllerRef.current) {
+                    abortControllerRef.current.abort();
+                  }
+                  setSelectedIdx(i); 
+                  setSelectedTimeSlotId(null); 
+                  setSelectedDate(null);
+                }}
               >
                 <div className="book-service-icon">{s.icon}</div>
                 <div>

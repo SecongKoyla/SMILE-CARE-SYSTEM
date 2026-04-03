@@ -30,23 +30,42 @@ public class ClinicHoursService {
      * This replaces repeated individual queries
      *
      * Query Count: 1 (instead of 7)
+     * 
+     * CRITICAL: Must keep @Transactional(readOnly = true) for thread safety with Spring Cache
+     * - Ensures Hibernate session is properly managed under concurrent load
+     * - Prevents "prepared statement already exists" errors from PostgreSQL
+     * - Allows proper connection pooling and statement caching
      */
-    @Cacheable(value = "clinicHoursCache", cacheManager = "cacheManager")
     @Transactional(readOnly = true)
+    @Cacheable(value = "clinicHoursCache", cacheManager = "cacheManager")
     public Map<Integer, ClinicHours> getAllClinicHoursCached() {
-        logger.info("📅 Loading all clinic hours from database (CACHE MISS - will be reused for 10 min)");
+        try {
+            logger.info("📅 Loading all clinic hours from database (CACHE MISS - will be reused for 10 min)");
 
-        // Single query: Get all days at once
-        List<ClinicHours> hoursList = repository.findAll();
+            // Single query: Get all days at once
+            List<ClinicHours> hoursList = repository.findAll();
 
-        // Convert to map for O(1) lookup
-        Map<Integer, ClinicHours> map = new HashMap<>();
-        for (ClinicHours h : hoursList) {
-            map.put(h.getDayOfWeek(), h);
+            if (hoursList == null || hoursList.isEmpty()) {
+                logger.warning("⚠️ No clinic hours found in database. Returning empty map.");
+                return new HashMap<>();
+            }
+
+            // Convert to map for O(1) lookup
+            Map<Integer, ClinicHours> map = new HashMap<>();
+            for (ClinicHours h : hoursList) {
+                if (h != null && h.getDayOfWeek() != null) {
+                    map.put(h.getDayOfWeek(), h);
+                }
+            }
+
+            logger.info("✅ Cached " + map.size() + " clinic hours configs");
+            return map;
+        } catch (Exception e) {
+            logger.severe("❌ Error loading clinic hours from database: " + e.getMessage());
+            e.printStackTrace();
+            // Return empty map instead of throwing to avoid breaking the request
+            return new HashMap<>();
         }
-
-        logger.info("✅ Cached " + map.size() + " clinic hours configs");
-        return map;
     }
 
     /**

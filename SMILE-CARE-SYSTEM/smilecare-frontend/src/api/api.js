@@ -256,7 +256,7 @@ function formatDateToISO(date) {
  * @param {Date} selectedDate - Optional: filter by specific date
  * @returns {Promise<Array>} Array of available time slot objects
  */
-export async function getAvailableTimeSlots(serviceId, selectedDate = null) {
+export async function getAvailableTimeSlots(serviceId, selectedDate = null, abortSignal = null) {
   try {
     const headers = { "Content-Type": "application/json" };
     const token = localStorage.getItem("accessToken");
@@ -285,10 +285,17 @@ export async function getAvailableTimeSlots(serviceId, selectedDate = null) {
 
     console.log("🔍 Fetching from URL:", url);
     
-    const res = await fetch(url, {
+    // Build fetch options with abort signal if provided
+    const fetchOptions = {
       method: "GET",
       headers: headers
-    });
+    };
+    
+    if (abortSignal) {
+      fetchOptions.signal = abortSignal;
+    }
+    
+    const res = await fetch(url, fetchOptions);
 
     console.log("📡 Response status:", res.status);
 
@@ -302,6 +309,11 @@ export async function getAvailableTimeSlots(serviceId, selectedDate = null) {
     console.log("✅ Time slots received:", data, `(${data?.length || 0} slots)`);
     return data;
   } catch (err) {
+    // Re-throw AbortError as-is (will be caught in BookPage)
+    if (err.name === "AbortError") {
+      throw err;
+    }
+    
     console.error("❌ Network/Parse error:", err);
     throw new Error(err.message || "Network error");
   }
