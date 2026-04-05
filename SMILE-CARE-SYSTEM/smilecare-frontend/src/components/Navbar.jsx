@@ -44,7 +44,7 @@ export default function Navbar({ currentPage, setPage, user, onLogout, onOpenPro
           {/* Brand */}
           <div
               className="nav-brand"
-              onClick={() => handleNav(isAdmin ? "admin-services" : "home")}
+              onClick={() => handleNav(isAdmin ? "admin-appts" : "home")}
           >
             <div className="nav-brand-icon">🦷</div>
             <span className="nav-brand-name">

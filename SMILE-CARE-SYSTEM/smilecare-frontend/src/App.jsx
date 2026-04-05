@@ -71,7 +71,7 @@ export default function App() {
   // Router page
   const [page, setPage] = useState(() => {
     const persistedUser = getPersistedUser();
-    return persistedUser?.role === "ADMIN" ? "admin-services" : "home";
+    return persistedUser?.role === "ADMIN" ? "admin-appts" : "home";
   });
 
   const [showRegister, setShowRegister] = useState(false);
@@ -140,7 +140,7 @@ export default function App() {
 
     setPage(
         normalizedUser?.role === "ADMIN"
-            ? "admin-services"
+            ? "admin-appts"
             : "home"
     );
   };
@@ -151,19 +151,17 @@ export default function App() {
 
     setUser(normalizedUser);
     localStorage.setItem("user", JSON.stringify(normalizedUser));
-
+    
     setPage(
         normalizedUser?.role === "ADMIN"
-            ? "admin-services"
+            ? "admin-appts"
             : "home"
     );
   };
 
-
   const handleLogout = () => {
-
     setUser(null);
-
+    localStorage.removeItem("token");
     localStorage.removeItem("user");
 
     setPage("home");

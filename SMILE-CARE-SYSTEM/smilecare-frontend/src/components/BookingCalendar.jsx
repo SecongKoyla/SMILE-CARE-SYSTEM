@@ -11,7 +11,9 @@ export default function BookingCalendar({
 }) {
   
   const today = new Date();
-  const maxDate = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000); // 60 days from now
+  // Allow admin to configure how many days in advance users can book (default 60)
+  const bookingWindowDays = parseInt(localStorage.getItem("bookingWindowDays") || "60", 10);
+  const maxDate = new Date(today.getTime() + bookingWindowDays * 24 * 60 * 60 * 1000); 
 
   /**
    * Convert military time (HH:MM) to 12-hour format with AM/PM
