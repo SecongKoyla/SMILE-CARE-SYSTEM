@@ -5,7 +5,26 @@ import Modal from "../components/Modal.jsx";
 import { ICON_OPTIONS } from "../data/constants.js";
 import { addService, updateService, deleteService } from "../api/api.js";
 
-const EMPTY_FORM = { icon: "🦷", name: "", desc: "", price: "", duration: "" };
+const EMPTY_FORM = { 
+  icon: "🦷", 
+  name: "", 
+  desc: "", 
+  price: "", 
+  duration: "",
+  durationUnit: "minutes" // "minutes" or "hours"
+};
+
+// Helper function to format price display
+const formatPrice = (price) => {
+  if (!price) return "₱0";
+  return `₱${parseFloat(price).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+};
+
+// Helper function to format duration display
+const formatDuration = (duration, unit) => {
+  if (!duration) return "N/A";
+  return `${duration} ${unit === "hours" ? "hr" : "min"}`;
+};
 
 export default function AdminServicesPage({ services, setServices }) {
   const [showModal, setShowModal]   = useState(false);
@@ -26,30 +45,67 @@ export default function AdminServicesPage({ services, setServices }) {
   // ── Open edit modal ──
   const openEdit = (service) => {
     setEditTarget(service.id);
-    setForm({ icon: service.icon, name: service.name, desc: service.description || service.desc, price: service.price, duration: service.duration });
+    setForm({ 
+      icon: service.icon, 
+      name: service.name, 
+      desc: service.description || service.desc, 
+      price: service.price || "", 
+      duration: service.duration || "",
+      durationUnit: service.durationUnit || "minutes"
+    });
     setShowModal(true);
     setError(null);
   };
 
   // ── Save (add or update) ──
   const handleSave = async () => {
-    if (!form.name.trim() || !form.price.trim()) {
-      setError("Service name and price are required");
+    // Validation
+    if (!form.name.trim()) {
+      setError("Service name is required");
+      return;
+    }
+
+    const priceNum = parseFloat(form.price);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      setError("Price must be a valid number greater than 0");
+      return;
+    }
+
+    const durationNum = form.duration ? parseInt(form.duration) : null;
+    if (form.duration && (isNaN(durationNum) || durationNum <= 0)) {
+      setError("Duration must be a valid number greater than 0");
       return;
     }
 
     setLoading(true);
     try {
+      // Prepare data for backend
+      let durationMin = null;
+      if (form.duration && parseInt(form.duration) > 0) {
+        const durationValue = parseInt(form.duration);
+        // Convert to minutes if hours selected
+        durationMin = form.durationUnit === "hours" ? durationValue * 60 : durationValue;
+      }
+
+      const dataToSend = {
+        icon: form.icon,
+        name: form.name.trim(),
+        desc: form.desc.trim(),
+        price: priceNum,
+        duration_minutes: durationMin, // Send as duration_minutes
+        durationUnit: form.durationUnit || "minutes"
+      };
+
       if (editTarget === null) {
         // Add new service to backend
-        console.log("➕ Adding new service...");
-        const newService = await addService(form);
+        console.log("➕ Adding new service...", dataToSend);
+        const newService = await addService(dataToSend);
         console.log("✅ Service added:", newService);
         setServices(prev => [...prev, newService]);
       } else {
         // Update existing service in backend
-        console.log("✏️ Updating service...");
-        const updated = await updateService(editTarget, form);
+        console.log("✏️ Updating service...", dataToSend);
+        const updated = await updateService(editTarget, dataToSend);
         console.log("✅ Service updated:", updated);
         setServices(prev =>
           prev.map(s => s.id === editTarget ? { ...s, ...updated } : s)
@@ -130,8 +186,8 @@ export default function AdminServicesPage({ services, setServices }) {
                 <div className="admin-service-name">{s.name}</div>
                 <div className="admin-service-desc">{s.desc || "No description."}</div>
                 <div className="admin-service-meta">
-                  <span className="admin-service-price">{s.price}</span>
-                  <span className="admin-service-dur">· {s.duration}</span>
+                  <span className="admin-service-price">{formatPrice(s.price)}</span>
+                  <span className="admin-service-dur">· {formatDuration(s.duration, s.durationUnit)}</span>
                 </div>
               </div>
               <div className="admin-service-actions">
@@ -189,15 +245,60 @@ export default function AdminServicesPage({ services, setServices }) {
               <input className="sc-input" placeholder="e.g. Teeth Cleaning" disabled={loading} {...field("name")} />
             </div>
             <div>
-              <label className="sc-label">Price *</label>
-              <input className="sc-input" placeholder="e.g. ₱800" disabled={loading} {...field("price")} />
+              <label className="sc-label">Price (₱) *</label>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "14px", fontWeight: "600", color: "#4ecba6" }}>₱</span>
+                <input 
+                  className="sc-input" 
+                  type="number"
+                  placeholder="800" 
+                  disabled={loading}
+                  min="0"
+                  step="10"
+                  value={form.price}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || /^\d+(\.\d{0,2})?$/.test(val)) {
+                      setForm(prev => ({ ...prev, price: val }));
+                    }
+                  }}
+                  style={{ flex: 1 }}
+                />
+              </div>
             </div>
           </div>
 
           {/* Duration */}
           <div className="sc-form-group">
-            <label className="sc-label">Duration</label>
-            <input className="sc-input" placeholder="e.g. 45 min" disabled={loading} {...field("duration")} />
+            <label className="sc-label">Service Duration</label>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <div style={{ flex: 1 }}>
+                <input 
+                  className="sc-input" 
+                  type="number"
+                  placeholder="e.g. 30" 
+                  disabled={loading}
+                  min="1"
+                  value={form.duration}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || /^\d+$/.test(val)) {
+                      setForm(prev => ({ ...prev, duration: val }));
+                    }
+                  }}
+                />
+              </div>
+              <select 
+                className="sc-input"
+                disabled={loading}
+                value={form.durationUnit || "minutes"}
+                onChange={(e) => setForm(prev => ({ ...prev, durationUnit: e.target.value }))}
+                style={{ flex: 0.8 }}
+              >
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+              </select>
+            </div>
           </div>
 
           {/* Description */}

@@ -18,15 +18,20 @@ public class TimeSlot {
     @JoinColumn(name = "service_id", nullable = false)
     private DentalService service;
 
+    @Column(name = "appointment_date", nullable = false)
     private LocalDate date;
 
+    @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
 
+    @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
 
+    @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
     private TimeSlotStatus status;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public TimeSlot() {}

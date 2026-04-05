@@ -236,6 +236,74 @@ export async function updateAppointmentStatus(appointmentId, status) {
 }
 
 /**
+ * Delete an appointment (admin only)
+ * @param {number} appointmentId - The appointment ID to delete
+ * @returns {Promise<Object>} Success response
+ * @throws {Error} with descriptive error message
+ */
+export async function deleteAppointment(appointmentId) {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    console.log("[API] Deleting appointment - ID:", appointmentId, "Type:", typeof appointmentId);
+    
+    // Validate appointment ID
+    if (!appointmentId || appointmentId <= 0) {
+      console.error("[API] Invalid appointment ID:", appointmentId);
+      throw new Error("Invalid appointment ID: " + appointmentId);
+    }
+
+    const url = `${API_URL}/appointments/${appointmentId}`;
+    console.log("[API] DELETE request to:", url);
+    
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: headers
+    });
+
+    console.log("[API] Response status:", res.status, res.statusText);
+
+    if (!res.ok) {
+      let errorMessage = `Server error: ${res.status}`;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorMessage;
+        console.log("[API] Error response data:", errorData);
+      } catch {
+        const errorText = await res.text();
+        if (errorText) {
+          errorMessage = errorText.substring(0, 200);
+          console.log("[API] Error response text:", errorText);
+        }
+      }
+      
+      console.error("[API] Delete failed with status", res.status, ":", errorMessage);
+      
+      if (res.status === 404) {
+        throw new Error("Appointment not found (ID: " + appointmentId + "). It may have already been deleted.");
+      } else if (res.status === 403) {
+        throw new Error("Access denied. Only admins can delete appointments.");
+      } else if (res.status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+      
+      throw new Error(errorMessage || "Failed to delete appointment");
+    }
+
+    const data = await res.json();
+    console.log("[API] ✅ Appointment deleted successfully - Response:", data);
+    return data;
+  } catch (err) {
+    console.error("[API] ❌ deleteAppointment error:", err.message);
+    throw new Error(err.message || "Network error");
+  }
+}
+
+/**
  * Format a JavaScript Date to YYYY-MM-DD string in local timezone
  * This is critical for consistent date handling between frontend and backend
  */
@@ -332,22 +400,36 @@ export async function bookAppointment(bookingData) {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
+    console.log("📅 [bookAppointment] Sending booking data:", bookingData);
+
+    // Ensure all required fields are present
+    const payload = {
+      patientId: bookingData.patientId,
+      serviceId: bookingData.serviceId,
+      timeSlotId: bookingData.timeSlotId,
+      startTime: bookingData.startTime,
+      endTime: bookingData.endTime,
+      appointmentDate: bookingData.appointmentDate,
+      status: "PENDING"
+    };
+
     const res = await fetch(`${API_URL}/appointments/book`, {
       method: "POST",
       headers: headers,
-      body: JSON.stringify({
-        ...bookingData,
-        status: "PENDING"
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || "Failed to book appointment");
+      const errorData = await res.json().catch(() => ({message: "Unknown error"}));
+      console.error("❌ [bookAppointment] Error response:", errorData);
+      throw new Error(errorData.message || `Failed to book appointment (${res.status})`);
     }
 
-    return await res.json();
+    const result = await res.json();
+    console.log("✅ [bookAppointment] Booking successful:", result);
+    return result;
   } catch (err) {
+    console.error("❌ [bookAppointment] Error:", err);
     throw new Error(err.message || "Network error");
   }
 }

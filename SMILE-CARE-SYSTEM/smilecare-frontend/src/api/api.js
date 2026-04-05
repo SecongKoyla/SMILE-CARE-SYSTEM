@@ -400,22 +400,36 @@ export async function bookAppointment(bookingData) {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
+    console.log("📅 [bookAppointment] Sending booking data:", bookingData);
+
+    // Ensure all required fields are present
+    const payload = {
+      patientId: bookingData.patientId,
+      serviceId: bookingData.serviceId,
+      timeSlotId: bookingData.timeSlotId,
+      startTime: bookingData.startTime,
+      endTime: bookingData.endTime,
+      appointmentDate: bookingData.appointmentDate,
+      status: "PENDING"
+    };
+
     const res = await fetch(`${API_URL}/appointments/book`, {
       method: "POST",
       headers: headers,
-      body: JSON.stringify({
-        ...bookingData,
-        status: "PENDING"
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || "Failed to book appointment");
+      const errorData = await res.json().catch(() => ({message: "Unknown error"}));
+      console.error("❌ [bookAppointment] Error response:", errorData);
+      throw new Error(errorData.message || `Failed to book appointment (${res.status})`);
     }
 
-    return await res.json();
+    const result = await res.json();
+    console.log("✅ [bookAppointment] Booking successful:", result);
+    return result;
   } catch (err) {
+    console.error("❌ [bookAppointment] Error:", err);
     throw new Error(err.message || "Network error");
   }
 }

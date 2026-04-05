@@ -37,7 +37,6 @@ export default function AppointmentsPage({ user, setPage }) {
         day: new Date(appt.timeSlot.date).getDate().toString().padStart(2, '0'),
         month: new Date(appt.timeSlot.date).toLocaleString('default', { month: 'short' }),
         type: appt.service.name,
-        doctor: "Dr. Rivera",
         time: appt.timeSlot.startTime,
         status: statusMap[appt.status] || appt.status.toLowerCase(),
         patient: user.name

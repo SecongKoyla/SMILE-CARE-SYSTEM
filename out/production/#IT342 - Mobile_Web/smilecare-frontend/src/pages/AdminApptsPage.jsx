@@ -2,7 +2,8 @@
 // Admin-only: view all appointments across all patients
 import { useState, useEffect } from "react";
 import AppointmentCard from "../components/AppointmentCard.jsx";
-import { getAllAppointments, updateAppointmentStatus } from "../api/api.js";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal.jsx";
+import { getAllAppointments, updateAppointmentStatus, deleteAppointment } from "../api/api.js";
 
 const FILTERS = ["all", "approved", "pending", "cancelled"];
 
@@ -13,6 +14,15 @@ export default function AdminApptsPage() {
   const [filter, setFilter] = useState("all");
   const [retryCount, setRetryCount] = useState(0);
   const [retryTimeout, setRetryTimeout] = useState(null);
+
+  // Delete modal states
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    appointmentData: null,
+    isDeleting: false,
+    deleteError: null,
+    successMessage: null,
+  });
 
   useEffect(() => {
     fetchAppointments();
@@ -71,6 +81,114 @@ export default function AdminApptsPage() {
       await fetchAppointments();
     } catch (err) {
       alert("Error updating status: " + err.message);
+    }
+  };
+
+  const openDeleteModal = (appointmentData) => {
+    // Get the original appointment object with full nested structure
+    const originalAppt = appointmentData._original;
+    
+    if (!originalAppt) {
+      console.error("[AdminApptsPage] No appointment data found:", appointmentData);
+      alert("Could not load appointment details. Please try refreshing the page.");
+      return;
+    }
+
+    // Validate appointment has an ID
+    if (!originalAppt.id || originalAppt.id <= 0) {
+      console.error("[AdminApptsPage] Invalid appointment ID:", originalAppt.id);
+      alert("Invalid appointment ID. Please refresh and try again.");
+      return;
+    }
+
+    // Format the appointment data for display in modal
+    const formattedDate = new Date(originalAppt.timeSlot.date).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+
+    console.log("[AdminApptsPage] Opening delete modal for appointment ID:", originalAppt.id, 
+                "Patient:", originalAppt.patient.fullName, 
+                "Full appointment:", originalAppt);
+
+    setDeleteModal({
+      isOpen: true,
+      appointmentData: {
+        id: originalAppt.id,
+        patientName: originalAppt.patient.fullName,
+        serviceType: originalAppt.service.name,
+        date: formattedDate,
+        time: originalAppt.timeSlot.startTime,
+      },
+      isDeleting: false,
+      deleteError: null,
+      successMessage: null,
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      appointmentData: null,
+      isDeleting: false,
+      deleteError: null,
+      successMessage: null,
+    });
+  };
+
+  const confirmDeleteAppointment = async () => {
+    if (!deleteModal.appointmentData) {
+      console.error("[AdminApptsPage] No appointment data in delete modal");
+      return;
+    }
+
+    const appointmentId = deleteModal.appointmentData.id;
+    console.log("[AdminApptsPage] Confirming deletion for appointment ID:", appointmentId, "Type:", typeof appointmentId);
+    
+    // Validate the appointment ID exists and is valid
+    if (!appointmentId || appointmentId <= 0) {
+      console.error("[AdminApptsPage] Invalid appointment ID for deletion:", appointmentId);
+      setDeleteModal(prev => ({
+        ...prev,
+        isDeleting: false,
+        deleteError: "Invalid appointment ID. Cannot delete.",
+      }));
+      return;
+    }
+
+    setDeleteModal(prev => ({
+      ...prev,
+      isDeleting: true,
+      deleteError: null,
+    }));
+
+    try {
+      // Call the delete API
+      console.log("[AdminApptsPage] Sending DELETE request for appointment", appointmentId);
+      await deleteAppointment(appointmentId);
+      console.log("✅ Appointment deleted successfully");
+
+      // Show success message briefly
+      setDeleteModal(prev => ({
+        ...prev,
+        successMessage: "Appointment deleted successfully!",
+      }));
+
+      // Close modal and refresh after a short delay
+      setTimeout(() => {
+        closeDeleteModal();
+        fetchAppointments();
+      }, 800);
+
+    } catch (err) {
+      console.error("❌ Error deleting appointment:", err);
+      setDeleteModal(prev => ({
+        ...prev,
+        isDeleting: false,
+        deleteError: err.message || "Failed to delete appointment. Please try again.",
+      }));
     }
   };
 
@@ -136,12 +254,13 @@ export default function AdminApptsPage() {
     day: new Date(appt.timeSlot.date).getDate().toString().padStart(2, '0'),
     month: new Date(appt.timeSlot.date).toLocaleString('default', { month: 'short' }),
     type: appt.service.name,
-    doctor: "Dr. Rivera",
     time: appt.timeSlot.startTime,
     status: statusMap[appt.status] || appt.status.toLowerCase(),
     originalStatus: appt.status,
     patient: appt.patient.fullName,
-    patientEmail: appt.patient.email
+    patientEmail: appt.patient.email,
+    // Include the full original appointment object for actions like delete
+    _original: appt
   }));
 
   const filtered = filter === "all"
@@ -239,11 +358,29 @@ export default function AdminApptsPage() {
                 >
                   ✕ Cancel
                 </button>
+                <button
+                  className="status-action delete-action"
+                  onClick={() => openDeleteModal(a)}
+                  title="Delete appointment"
+                  style={{ color: "#dc3545" }}
+                >
+                  🗑️ Delete
+                </button>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        appointmentInfo={deleteModal.appointmentData}
+        onConfirm={confirmDeleteAppointment}
+        onCancel={closeDeleteModal}
+        isLoading={deleteModal.isDeleting}
+        errorMessage={deleteModal.deleteError}
+      />
     </main>
   );
 }
