@@ -35,6 +35,11 @@ export default function AppointmentCard({ appt, showStatus = false, showPatient 
       {/* Info */}
       <div className="appt-info">
         <div className="appt-type">{appt.type}</div>
+        {appt.desc && (
+          <div className="appt-desc" style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+            {appt.desc}
+          </div>
+        )}
         {showPatient && (
           <div className="appt-patient">{appt.patient}</div>
         )}
@@ -54,8 +59,23 @@ export default function AppointmentCard({ appt, showStatus = false, showPatient 
       {onCancel && appt.status === 'pending' && (
         <button 
           className="btn-outline" 
-          onClick={() => onCancel(appt.id)}
-          style={{ fontSize: '13px', padding: '4px 12px', minWidth: 'auto', marginLeft: '12px', color: '#ef4444', borderColor: '#fee2e2' }}
+          title="Cancel Appointment"
+          onClick={() => onCancel(appt)}
+          style={{ 
+            fontSize: '13px', 
+            padding: '6px 14px', 
+            minWidth: 'auto', 
+            marginLeft: '12px', 
+            color: '#dc2626', 
+            backgroundColor: '#fef2f2',
+            borderColor: '#fca5a5',
+            fontWeight: '600',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => { e.target.style.backgroundColor = '#fee2e2'; e.target.style.borderColor = '#f87171'; }}
+          onMouseLeave={(e) => { e.target.style.backgroundColor = '#fef2f2'; e.target.style.borderColor = '#fca5a5'; }}
         >
           Cancel
         </button>
