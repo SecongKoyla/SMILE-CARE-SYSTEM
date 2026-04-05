@@ -369,11 +369,49 @@ export default function AdminApptsPage() {
                  Clear Date Filter
                </button>
             )}
-            <button className="btn-icon" onClick={handlePrevMonth} style={{ background: "#f8fafc" }}>←</button>
+            <button
+              onClick={handlePrevMonth}
+              className="btn-outline"
+              style={{
+                borderRadius: "50%",
+                width: "36px",
+                height: "36px",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                border: "1px solid var(--mint)",
+                color: "var(--mint)",
+                background: "var(--mint-light)",
+                boxShadow: "var(--shadow-sm)"
+              }}
+            >
+              ←
+            </button>
             <div style={{ fontWeight: "600", minWidth: "140px", textAlign: "center", color: "var(--navy)" }}>
               {currentMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
             </div>
-            <button className="btn-icon" onClick={handleNextMonth} style={{ background: "#f8fafc" }}>→</button>
+            <button
+              onClick={handleNextMonth}
+              className="btn-outline"
+              style={{
+                borderRadius: "50%",
+                width: "36px",
+                height: "36px",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                border: "1px solid var(--mint)",
+                color: "var(--mint)",
+                background: "var(--mint-light)",
+                boxShadow: "var(--shadow-sm)"
+              }}
+            >
+              →
+            </button>
           </div>
         </div>
 
@@ -409,9 +447,9 @@ export default function AdminApptsPage() {
                   padding: "8px 4px",
                   borderRadius: "12px",
                   cursor: "pointer",
-                  background: isSelected ? "var(--teal)" : isToday ? "#f1f5f9" : "transparent",
+                  background: isSelected ? "var(--mint)" : isToday ? "#f1f5f9" : "transparent",
                   color: isSelected ? "white" : "var(--navy)",
-                  border: isToday && !isSelected ? "1px solid var(--teal)" : "1px solid transparent",
+                  border: isToday && !isSelected ? "1px solid var(--mint)" : "1px solid transparent",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
