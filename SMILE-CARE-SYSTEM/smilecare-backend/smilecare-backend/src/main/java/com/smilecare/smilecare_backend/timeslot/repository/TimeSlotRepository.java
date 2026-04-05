@@ -57,4 +57,20 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, Long> {
      */
     @Query("SELECT DISTINCT ts FROM TimeSlot ts JOIN FETCH ts.service WHERE ts.service.id = :serviceId AND ts.date >= :fromDate AND ts.status = 'AVAILABLE' ORDER BY ts.date ASC, ts.startTime ASC")
     List<TimeSlot> findAvailableByServiceFromDate(@Param("serviceId") Long serviceId, @Param("fromDate") LocalDate fromDate);
+
+    List<TimeSlot> findByServiceIdAndDate(Long serviceId, LocalDate date);
+    
+    // Find all slots across all services on a specific date where status is not explicitly available
+    // AND it has an active appointment (avoids "ghost" booked slots from before the fix)
+    @Query("SELECT DISTINCT ts FROM TimeSlot ts " +
+           "WHERE ts.date = :date " +
+           "AND ts.status != 'AVAILABLE' " +
+           "AND EXISTS (" +
+           "  SELECT 1 FROM Appointment a " +
+           "  WHERE a.timeSlot = ts AND a.status IN ('PENDING', 'APPROVED', 'ARRIVED', 'COMPLETED')" +
+           ")")
+    List<TimeSlot> findBookedOrLockedByDate(@Param("date") LocalDate date);
+    
+    // Find all slots across all services on a specific date (legacy fallback)
+    List<TimeSlot> findByDate(LocalDate date);
 }

@@ -240,25 +240,45 @@ export default function BookingCalendar({
             gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))",
             gap: "8px"
           }}>
-            {getSlotsForDate(selectedDate).map(slot => (
-              <button
-                key={slot.id}
-                onClick={() => setSelectedSlotId(slot.id)}
-                style={{
-                  padding: "10px",
-                  border: selectedSlotId === slot.id ? "2px solid var(--mint)" : "1px solid #ddd",
-                  borderRadius: "6px",
-                  background: selectedSlotId === slot.id ? "rgba(78, 203, 166, 0.1)" : "white",
-                  color: "var(--navy)",
-                  fontWeight: selectedSlotId === slot.id ? "700" : "500",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  transition: "all 0.2s"
-                }}
-              >
-                🕐 {formatTimeToAMPM(slot.startTime)}
-              </button>
-            ))}
+            {getSlotsForDate(selectedDate).map(slot => {
+              const isAvailable = slot.status === 'AVAILABLE' || !slot.status; // Fallback in case status is null
+              const isSelected = selectedSlotId === slot.id;
+              
+              return (
+                <button
+                  key={slot.id}
+                  disabled={!isAvailable}
+                  onClick={() => {
+                    if (isAvailable) setSelectedSlotId(slot.id);
+                  }}
+                  style={{
+                    padding: "10px",
+                    border: isSelected ? "2px solid var(--mint)" : isAvailable ? "1px solid #ddd" : "1px solid #eee",
+                    borderRadius: "6px",
+                    background: isSelected ? "rgba(78, 203, 166, 0.1)" : isAvailable ? "white" : "#f1f5f9",
+                    color: isAvailable ? "var(--navy)" : "#94a3b8",
+                    fontWeight: isSelected ? "700" : "500",
+                    cursor: isAvailable ? "pointer" : "not-allowed",
+                    fontSize: "13px",
+                    textDecoration: !isAvailable ? "line-through" : "none",
+                    opacity: !isAvailable ? 0.7 : 1,
+                    transition: "all 0.2s",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "2px"
+                  }}
+                  title={!isAvailable ? "This time slot is no longer available" : "Click to select"}
+                >
+                  <span>🕐 {formatTimeToAMPM(slot.startTime)}</span>
+                  {!isAvailable && (
+                    <span style={{ fontSize: "9px", textDecoration: "none", color: "#ef4444", fontWeight: "600" }}>
+                      {slot.status === 'LOCKED' ? 'RESERVED' : 'BOOKED'}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       ) : selectedDate ? (

@@ -238,6 +238,24 @@ public class AppointmentService {
         try {
             AppointmentStatus newStatus = AppointmentStatus.valueOf(status.toUpperCase());
             appointment.setStatus(newStatus);
+            
+            // 🔵 Automatically free the time slot if cancelled
+            if (newStatus == AppointmentStatus.CANCELLED) {
+                TimeSlot timeSlot = appointment.getTimeSlot();
+                if (timeSlot != null && timeSlot.getStatus() == TimeSlotStatus.BOOKED) {
+                    timeSlot.setStatus(TimeSlotStatus.AVAILABLE);
+                    timeSlotRepository.save(timeSlot);
+                }
+            }
+            // 🔴 Re-book the time slot if changing from cancelled back to active
+            else if (newStatus == AppointmentStatus.APPROVED || newStatus == AppointmentStatus.PENDING || newStatus == AppointmentStatus.ARRIVED || newStatus == AppointmentStatus.COMPLETED) {
+                TimeSlot timeSlot = appointment.getTimeSlot();
+                if (timeSlot != null && timeSlot.getStatus() == TimeSlotStatus.AVAILABLE) {
+                    timeSlot.setStatus(TimeSlotStatus.BOOKED);
+                    timeSlotRepository.save(timeSlot);
+                }
+            }
+            
             return appointmentRepository.save(appointment);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid appointment status: " + status);

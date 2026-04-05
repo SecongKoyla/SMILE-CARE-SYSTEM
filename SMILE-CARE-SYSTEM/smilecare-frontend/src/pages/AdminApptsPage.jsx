@@ -429,15 +429,15 @@ export default function AdminApptsPage() {
                    <div style={{ display: "flex", gap: "3px", marginTop: "6px", flexWrap: "wrap", justifyContent: "center", padding: "0 4px" }}>
                      {dayAppts.slice(0,3).map((da, idx) => (
                        <div key={idx} style={{
-                         width: "6px", height: "6px", borderRadius: "50%",
-                         background: isSelected ? "white" : (
-                           da.status === 'confirmed' ? 'var(--teal)' : 
+                         width: "8px", height: "8px", borderRadius: "50%",
+                         border: isSelected ? "1px solid white" : "none",
+                         background: 
+                           da.status === 'confirmed' ? '#22c55e' : // explicitly green
                            da.status === 'pending' ? '#eab308' : 
                            '#ef4444' // cancelled
-                         )
                        }} title={`${da.patient} - ${da.type}`} />
                      ))}
-                     {dayAppts.length > 3 && <span style={{ fontSize: "10px", lineHeight: "6px", color: isSelected ? "white" : "var(--gray)", marginLeft: "1px" }}>+</span>}
+                     {dayAppts.length > 3 && <span style={{ fontSize: "10px", lineHeight: "8px", color: isSelected ? "white" : "var(--gray)", marginLeft: "1px" }}>+</span>}
                    </div>
                 )}
               </div>

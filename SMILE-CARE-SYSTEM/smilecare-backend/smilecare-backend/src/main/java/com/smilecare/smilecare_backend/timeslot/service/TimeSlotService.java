@@ -41,30 +41,7 @@ public class TimeSlotService {
      */
     @Transactional(readOnly = true)
     public List<TimeSlotDTO> getAvailableTimeSlots() {
-        try {
-            logger.info("📅 Fetching all available time slots from today");
-            LocalDate today = LocalDate.now();
-            
-            // Fetch available slots from today onwards using database query
-            List<TimeSlot> slots = timeSlotRepository.findAvailableFromDate(today);
-            
-            // Load clinic hours ONCE (1 query or 0 if cached)
-            Map<Integer, ClinicHours> cachedClinicHours = clinicHoursService.getAllClinicHoursCached();
-            logger.info("✅ Loaded clinic hours from cache");
-            
-            // Filter using pre-loaded hours (NO additional queries)
-            List<TimeSlotDTO> result = slots.stream()
-                    .filter(slot -> isTimeSlotDayOpen(slot, cachedClinicHours))
-                    .map(TimeSlotDTO::new)
-                    .collect(Collectors.toList());
-            
-            logger.info("✅ Found " + result.size() + " available time slots from today onwards");
-            return result;
-        } catch (Exception e) {
-            logger.severe("❌ Error fetching available time slots: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Failed to fetch available time slots: " + e.getMessage(), e);
-        }
+        return new ArrayList<>(); // Not officially used with dynamic slots
     }
 
     /**
@@ -105,6 +82,19 @@ public class TimeSlotService {
                     if (clinicHours != null && clinicHours.getIsOperating()) {
                         List<TimeSlotDTO> dailySlots = slotGenerationService.generateHourlySlots(serviceId, date, clinicHours);
                         if (dailySlots != null && !dailySlots.isEmpty()) {
+                            // Check which of these are already booked across ALL services on this date
+                            List<TimeSlot> existingSlots = timeSlotRepository.findBookedOrLockedByDate(date);
+                            if (existingSlots != null && !existingSlots.isEmpty()) {
+                                for (TimeSlotDTO dto : dailySlots) {
+                                    for (TimeSlot dbSlot : existingSlots) {
+                                        if (dbSlot.getStartTime().equals(dto.getStartTime())) {
+                                            dto.setStatus(dbSlot.getStatus());
+                                            dto.setId(dbSlot.getId());
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                             allSlots.addAll(dailySlots);
                         }
                     }
@@ -162,7 +152,27 @@ public class TimeSlotService {
             
             // Dynamically generate hourly slots
             List<TimeSlotDTO> slots = slotGenerationService.generateHourlySlots(serviceId, date, clinicHours);
-            return slots != null ? slots : new ArrayList<>();
+            if (slots == null) {
+                slots = new ArrayList<>();
+            } else {
+                // Fetch ONLY booked or locked slots for ANY service on this date from DB
+                // This correctly blocks times where ANY other service was already booked, while ignoring cancelled/available ones
+                List<TimeSlot> existingSlots = timeSlotRepository.findBookedOrLockedByDate(date);
+                if (existingSlots != null && !existingSlots.isEmpty()) {
+                    for (TimeSlotDTO dto : slots) {
+                        for (TimeSlot dbSlot : existingSlots) {
+                            if (dbSlot.getStartTime().equals(dto.getStartTime())) {
+                                // Update status of dynamically generated slots if they are booked or locked
+                                dto.setStatus(dbSlot.getStatus());
+                                // Use the actual DB ID so frontend knows it's an existing slot
+                                dto.setId(dbSlot.getId());
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            return slots;
             
         } catch (Exception e) {
             logger.severe("❌ Error generating hourly slots for service " + serviceId + " on " + date + ": " + e.getMessage());
