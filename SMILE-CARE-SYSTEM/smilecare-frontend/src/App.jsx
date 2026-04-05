@@ -25,6 +25,7 @@ import ProfilePage      from "./pages/ProfilePage.jsx";
 import AdminServicesPage from "./pages/AdminServicePage.jsx";
 import AdminApptsPage    from "./pages/AdminApptsPage.jsx";
 import AdminAvailabilityPage from "./pages/AdminAvailabilityPage.jsx";
+import AdminClientsPage  from "./pages/AdminClientsPage.jsx";
 
 // API
 import { getServices, getUserAppointments } from "./api/api.js";
@@ -313,6 +314,11 @@ export default function App() {
       case "admin-availability":
         return (
             <AdminAvailabilityPage />
+        );
+        
+      case "admin-clients":
+        return (
+            <AdminClientsPage />
         );
 
       default:

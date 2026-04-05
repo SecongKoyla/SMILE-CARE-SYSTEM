@@ -105,6 +105,40 @@ export async function register(fullName, email, password, confirmPassword) {
 }
 
 /**
+ * Fetch all registered users/clients (for admin)
+ * @returns {Promise<Array>} Array of user objects
+ * @throws {Error} with descriptive error message
+ */
+export async function getAllUsers() {
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    console.log("[API] Fetching all clients from:", `${API_URL}/users`);
+    const res = await fetch(`${API_URL}/users`, {
+      method: "GET",
+      headers,
+    });
+
+    if (!res.ok) {
+      console.error("[API] Error response status:", res.status);
+      const errData = await res.json().catch(() => null);
+      throw new Error((errData && errData.message) ? errData.message : "Failed to fetch clients.");
+    }
+
+    const data = await res.json();
+    console.log(`[API] Successfully fetched clients, count: ${data?.length || 0}`);
+    return data;
+  } catch (err) {
+    console.error("[API] getAllUsers error:", err.message);
+    throw new Error(err.message || "Server error. Please try again.");
+  }
+}
+
+/**
  * Get all appointments (for admin)
  * @returns {Promise<Array>} Array of appointment objects
  * @throws {Error} with descriptive error message

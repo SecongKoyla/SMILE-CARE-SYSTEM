@@ -664,15 +664,16 @@ export default function AdminApptsPage() {
                   width: "100%", 
                   padding: "14px 16px",
                   borderRadius: "12px",
-                  border: "1px solid #cbd5e1",
+                  border: "1px solid var(--navy)",
                   fontSize: "16px",
                   fontWeight: "600",
-                  color: "var(--navy)",
+                  background: "var(--navy)",
+                  color: "#ffffff",
                   outline: "none",
                   transition: "all 0.2s"
                 }}
                 onFocus={(e) => { e.target.style.borderColor = "var(--mint)"; e.target.style.boxShadow = "0 0 0 3px var(--mint-light)" }}
-                onBlur={(e) => { e.target.style.borderColor = "#cbd5e1"; e.target.style.boxShadow = "none" }}
+                onBlur={(e) => { e.target.style.borderColor = "var(--navy)"; e.target.style.boxShadow = "none" }}
               />
             </div>
             <div style={{ display: "flex", gap: "12px" }}>
