@@ -5,7 +5,7 @@ import AppointmentCard from "../components/AppointmentCard.jsx";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.jsx";
 import { getAllAppointments, updateAppointmentStatus, deleteAppointment } from "../api/api.js";
 
-const FILTERS = ["all", "approved", "pending", "cancelled"];
+const FILTERS = ["all", "approved", "pending", "completed", "cancelled"];
 
 export default function AdminApptsPage() {
   const [appointments, setAppointments] = useState([]);
@@ -205,26 +205,27 @@ export default function AdminApptsPage() {
 
   // Map backend status to display status
   const statusMap = {
-    "APPROVED": "confirmed",
+    "APPROVED": "approved",
     "PENDING": "pending",
     "CANCELLED": "cancelled",
-    "ARRIVED": "confirmed",
-    "COMPLETED": "confirmed"
+    "COMPLETED": "completed"
   };
 
   // Map filter names to actual status display names
   // This is needed because filters use "approved" but statuses map to "confirmed"
   const filterToStatusMap = {
     "all": null,           // null means show all
-    "approved": "confirmed",
+    "approved": "approved",
     "pending": "pending",
+    "completed": "completed",
     "cancelled": "cancelled"
   };
 
   // Map for display labels (what to show in empty state and logs)
   const filterLabelMap = {
-    "approved": "confirmed",
+    "approved": "approved",
     "pending": "pending",
+    "completed": "completed",
     "cancelled": "cancelled"
   };
 
@@ -300,8 +301,9 @@ export default function AdminApptsPage() {
   }
 
   const counts = {
-    confirmed: displayAppointments.filter(a => a.status === "confirmed").length,
+    approved:  displayAppointments.filter(a => a.status === "approved").length,
     pending:   displayAppointments.filter(a => a.status === "pending").length,
+    completed: displayAppointments.filter(a => a.status === "completed").length,
     cancelled: displayAppointments.filter(a => a.status === "cancelled").length,
   };
 
@@ -362,12 +364,13 @@ export default function AdminApptsPage() {
       </div>
 
       {/* Summary stats */}
-      <div className="stats">
+      <div className="stats" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
         {[
           { icon: "📅", label: "Total",     value: appointments.length },
-          { icon: "✅", label: "Confirmed", value: counts.confirmed },
+          { icon: "✅", label: "Approved",  value: counts.approved },
           { icon: "⏳", label: "Pending",   value: counts.pending },
-          { icon: "❌", label: "Cancelled", value: displayAppointments.filter(a => a.status === "cancelled").length },
+          { icon: "🏁", label: "Completed", value: counts.completed },
+          { icon: "❌", label: "Cancelled", value: counts.cancelled },
         ].map(s => (
           <div key={s.label} className="stat">
             <div className="stat-icon">{s.icon}</div>
@@ -389,8 +392,9 @@ export default function AdminApptsPage() {
           >
             {f.charAt(0).toUpperCase() + f.slice(1)} 
             {f !== "all" && ` (${
-              f === "approved" ? counts.confirmed : 
-              f === "pending" ? counts.pending : 
+              f === "approved" ? counts.approved : 
+              f === "pending" ? counts.pending :
+              f === "completed" ? counts.completed :
               counts.cancelled
             })`}
           </button>
@@ -563,7 +567,8 @@ export default function AdminApptsPage() {
                          width: "8px", height: "8px", borderRadius: "50%",
                          border: isSelected ? "1px solid white" : "none",
                          background: 
-                           da.status === 'confirmed' ? '#22c55e' : // explicitly green
+                           da.status === 'approved' ? '#22c55e' : // explicitly green
+                           da.status === 'completed' ? '#0284c7' : // blue
                            da.status === 'pending' ? '#eab308' : 
                            '#ef4444' // cancelled
                        }} title={`${da.patient} - ${da.type}`} />
@@ -597,11 +602,18 @@ export default function AdminApptsPage() {
               </div>
               <div className="appt-admin-actions">
                 <button
-                  className={`status-action${a.status === "confirmed" ? " active" : ""}`}
+                  className={`status-action${a.status === "approved" ? " active" : ""}`}
                   onClick={() => handleStatusChange(a.id, "APPROVED")}
-                  title="Confirm appointment"
+                  title="Approve appointment"
                 >
-                  ✓ Confirm
+                  ✓ Approve
+                </button>
+                <button
+                  className={`status-action${a.status === "completed" ? " active" : ""}`}
+                  onClick={() => handleStatusChange(a.id, "COMPLETED")}
+                  title="Mark as completed"
+                >
+                  🏁 Complete
                 </button>
                 <button
                   className={`status-action${a.status === "pending" ? " active" : ""}`}

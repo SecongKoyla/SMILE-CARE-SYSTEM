@@ -184,11 +184,10 @@ export default function App() {
         
         // Map backend appointments to display format
         const statusMap = {
-          "APPROVED": "confirmed",
+          "APPROVED": "approved",
           "PENDING": "pending",
           "CANCELLED": "cancelled",
-          "ARRIVED": "confirmed",
-          "COMPLETED": "confirmed"
+          "COMPLETED": "completed"
         };
 
         const transformed = userAppts.map(appt => ({

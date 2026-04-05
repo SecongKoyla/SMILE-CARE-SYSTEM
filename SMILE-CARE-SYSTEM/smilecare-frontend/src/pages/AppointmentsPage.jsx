@@ -4,7 +4,7 @@ import AppointmentCard from "../components/AppointmentCard.jsx";
 import Modal from "../components/Modal.jsx";
 import { getUserAppointments, updateAppointmentStatus } from "../api/api.js";
 
-const FILTERS = ["all", "confirmed", "pending", "cancelled"];
+const FILTERS = ["all", "approved", "pending", "completed", "cancelled"];
 
 export default function AppointmentsPage({ user, setPage }) {
   const [appointments, setAppointments] = useState([]);
@@ -30,11 +30,10 @@ export default function AppointmentsPage({ user, setPage }) {
       
       // Map backend status to display status
       const statusMap = {
-        "APPROVED": "confirmed",
+        "APPROVED": "approved",
         "PENDING": "pending",
         "CANCELLED": "cancelled",
-        "ARRIVED": "confirmed",
-        "COMPLETED": "confirmed"
+        "COMPLETED": "completed"
       };
 
       const transformed = data.map(appt => ({

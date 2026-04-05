@@ -80,22 +80,34 @@ public class AppointmentService {
         TimeSlot timeSlot;
         
         if (request.getTimeSlotId() < 0) {
-            // Temporary slot generated on frontend - create it now
-            logger.info("   🔵 Creating temporary slot (ID: " + request.getTimeSlotId() + ")");
+            logger.info("   🔵 Checking for existing slot (Date: " + request.getAppointmentDate() + ", Time: " + request.getStartTime() + ")");
             
-            if (request.getStartTime() == null || request.getEndTime() == null || request.getAppointmentDate() == null) {
-                throw new RuntimeException("For temporary slots, startTime, endTime, and appointmentDate are required");
+            List<TimeSlot> existingSlots = timeSlotRepository.findByServiceIdAndDate(request.getServiceId(), request.getAppointmentDate());
+            java.util.Optional<TimeSlot> exactMatch = existingSlots.stream()
+                .filter(ts -> ts.getStartTime().equals(request.getStartTime()))
+                .findFirst();
+
+            if (exactMatch.isPresent()) {
+                timeSlot = exactMatch.get();
+                logger.info("   ✓ Found existing slot in DB (ID: " + timeSlot.getId() + ")");
+            } else {
+                // Temporary slot generated on frontend - create it now
+                logger.info("   🔵 Creating temporary slot (ID: " + request.getTimeSlotId() + ")");
+                
+                if (request.getStartTime() == null || request.getEndTime() == null || request.getAppointmentDate() == null) {
+                    throw new RuntimeException("For temporary slots, startTime, endTime, and appointmentDate are required");
+                }
+                
+                timeSlot = new TimeSlot();
+                timeSlot.setService(service);
+                timeSlot.setDate(request.getAppointmentDate());
+                timeSlot.setStartTime(request.getStartTime());
+                timeSlot.setEndTime(request.getEndTime());
+                timeSlot.setStatus(TimeSlotStatus.AVAILABLE);
+                
+                logger.info("   ✓ Temporary TimeSlot created: " + request.getAppointmentDate() + " " + 
+                            request.getStartTime() + " - " + request.getEndTime());
             }
-            
-            timeSlot = new TimeSlot();
-            timeSlot.setService(service);
-            timeSlot.setDate(request.getAppointmentDate());
-            timeSlot.setStartTime(request.getStartTime());
-            timeSlot.setEndTime(request.getEndTime());
-            timeSlot.setStatus(TimeSlotStatus.AVAILABLE);
-            
-            logger.info("   ✓ Temporary TimeSlot created: " + request.getAppointmentDate() + " " + 
-                        request.getStartTime() + " - " + request.getEndTime());
         } else {
             // Existing slot from database
             timeSlot = timeSlotRepository.findById(request.getTimeSlotId())
