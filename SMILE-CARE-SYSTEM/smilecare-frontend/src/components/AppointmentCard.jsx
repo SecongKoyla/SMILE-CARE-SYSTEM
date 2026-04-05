@@ -21,7 +21,7 @@ function formatTime(timeString) {
   return `${hours}:${minutes} ${isAM ? 'AM' : 'PM'}`;
 }
 
-export default function AppointmentCard({ appt, showStatus = false, showPatient = false }) {
+export default function AppointmentCard({ appt, showStatus = false, showPatient = false, onCancel }) {
   return (
     <div className="appt">
       {/* Date block */}
@@ -48,6 +48,17 @@ export default function AppointmentCard({ appt, showStatus = false, showPatient 
         <span className={`badge badge-${appt.status}`}>
           {appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}
         </span>
+      )}
+
+      {/* Actions (like cancel) */}
+      {onCancel && appt.status === 'pending' && (
+        <button 
+          className="btn-outline" 
+          onClick={() => onCancel(appt.id)}
+          style={{ fontSize: '13px', padding: '4px 12px', minWidth: 'auto', marginLeft: '12px', color: '#ef4444', borderColor: '#fee2e2' }}
+        >
+          Cancel
+        </button>
       )}
     </div>
   );

@@ -21,9 +21,18 @@ const formatPrice = (price) => {
 };
 
 // Helper function to format duration display
-const formatDuration = (duration, unit) => {
-  if (!duration) return "N/A";
-  return `${duration} ${unit === "hours" ? "hr" : "min"}`;
+const formatDuration = (service) => {
+  if (!service) return "N/A";
+  
+  // Directly use the fields we expect from the DTO
+  const mins = service.duration_minutes || service.durationMinutes || 30;
+  const unit = service.duration_unit || service.durationUnit || "minutes";
+  
+  if (unit === "hours") {
+    return (mins / 60) + " hr";
+  }
+  
+  return mins + " min";
 };
 
 export default function AdminServicesPage({ services, setServices }) {
@@ -44,14 +53,26 @@ export default function AdminServicesPage({ services, setServices }) {
 
   // ── Open edit modal ──
   const openEdit = (service) => {
+    // Extract directly from what backend sends
+    const tempMins = service.duration_minutes || service.durationMinutes || 30;
+    const tempUnit = service.duration_unit || service.durationUnit || "minutes";
+    
+    // Set form fields based on unit
+    let formDuration = "";
+    if (tempUnit === "hours") {
+      formDuration = String(tempMins / 60);
+    } else {
+      formDuration = String(tempMins);
+    }
+    
     setEditTarget(service.id);
     setForm({ 
       icon: service.icon, 
       name: service.name, 
       desc: service.description || service.desc, 
       price: service.price || "", 
-      duration: service.duration || "",
-      durationUnit: service.durationUnit || "minutes"
+      duration: formDuration,
+      durationUnit: tempUnit
     });
     setShowModal(true);
     setError(null);
@@ -184,10 +205,10 @@ export default function AdminServicesPage({ services, setServices }) {
               <div className="admin-service-icon">{s.icon}</div>
               <div className="admin-service-body">
                 <div className="admin-service-name">{s.name}</div>
-                <div className="admin-service-desc">{s.desc || "No description."}</div>
+                <div className="admin-service-desc">{s.description || s.desc || "No description."}</div>
                 <div className="admin-service-meta">
                   <span className="admin-service-price">{formatPrice(s.price)}</span>
-                  <span className="admin-service-dur">· {formatDuration(s.duration, s.durationUnit)}</span>
+                  <span className="admin-service-dur">· {formatDuration(s)}</span>
                 </div>
               </div>
               <div className="admin-service-actions">

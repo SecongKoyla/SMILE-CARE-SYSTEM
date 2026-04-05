@@ -266,7 +266,9 @@ export default function BookPage({ services, user, setPage, onBook }) {
                 <div className="book-service-icon">{s.icon}</div>
                 <div>
                   <div className="book-service-name">{s.name}</div>
-                  <div className="book-service-dur">{s.duration} · {s.price}</div>
+                  <div className="book-service-dur">
+                    {s.duration_unit === 'hours' ? `${s.duration_minutes / 60} hr${s.duration_minutes / 60 !== 1 ? 's' : ''}` : `${s.duration_minutes || s.duration} min`} · ₱{s.price}
+                  </div>
                 </div>
               </div>
             ))}

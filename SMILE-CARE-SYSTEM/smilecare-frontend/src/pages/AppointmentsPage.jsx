@@ -1,7 +1,7 @@
 // pages/AppointmentsPage.jsx
 import { useState, useEffect } from "react";
 import AppointmentCard from "../components/AppointmentCard.jsx";
-import { getUserAppointments } from "../api/api.js";
+import { getUserAppointments, updateAppointmentStatus } from "../api/api.js";
 
 const FILTERS = ["all", "confirmed", "pending", "cancelled"];
 
@@ -42,6 +42,8 @@ export default function AppointmentsPage({ user, setPage }) {
         patient: user.name
       }));
       
+      // Sort by date (descending or ascending? typically most recent or upcoming first)
+      transformed.sort((a, b) => new Date(`${b.month} ${b.day}, ${new Date().getFullYear()} ${b.time}`) - new Date(`${a.month} ${a.day}, ${new Date().getFullYear()} ${a.time}`));
       setAppointments(transformed);
     } catch (err) {
       console.error("Error fetching user appointments:", err);
@@ -49,6 +51,17 @@ export default function AppointmentsPage({ user, setPage }) {
       setAppointments([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelAppointment = async (id) => {
+    if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+    
+    try {
+      await updateAppointmentStatus(id, "CANCELLED");
+      setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: "cancelled" } : a));
+    } catch (err) {
+      alert("Failed to cancel the appointment: " + err.message);
     }
   };
 
@@ -120,7 +133,7 @@ export default function AppointmentsPage({ user, setPage }) {
               </button>
             </div>
           ) : filtered.map(a => (
-            <AppointmentCard key={a.id} appt={a} showStatus />
+            <AppointmentCard key={a.id} appt={a} showStatus onCancel={handleCancelAppointment} />
           ))}
         </div>
       </div>

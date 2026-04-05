@@ -31,4 +31,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByPatientIdWithRelationships(@Param("patientId") Long patientId);
     
     List<Appointment> findByPatientId(Long patientId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM Appointment a WHERE a.service.id = :serviceId")
+    void deleteByServiceId(@Param("serviceId") Long serviceId);
 }

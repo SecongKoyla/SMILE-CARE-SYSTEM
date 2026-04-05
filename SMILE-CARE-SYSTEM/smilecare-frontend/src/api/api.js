@@ -494,7 +494,10 @@ export async function addService(serviceData) {
         name: serviceData.name,
         description: serviceData.desc || serviceData.description,
         price: serviceData.price,
-        duration: serviceData.duration,
+        durationUnit: serviceData.durationUnit || "minutes",
+        duration_unit: serviceData.durationUnit || "minutes",
+        durationMinutes: serviceData.duration_minutes || 30,
+        duration_minutes: serviceData.duration_minutes || 30,
         icon: serviceData.icon
       })
     });
@@ -538,7 +541,10 @@ export async function updateService(serviceId, serviceData) {
         name: serviceData.name,
         description: serviceData.desc || serviceData.description,
         price: serviceData.price,
-        duration: serviceData.duration,
+        durationUnit: serviceData.durationUnit || "minutes",
+        duration_unit: serviceData.durationUnit || "minutes",
+        durationMinutes: serviceData.duration_minutes || 30,
+        duration_minutes: serviceData.duration_minutes || 30,
         icon: serviceData.icon
       })
     });

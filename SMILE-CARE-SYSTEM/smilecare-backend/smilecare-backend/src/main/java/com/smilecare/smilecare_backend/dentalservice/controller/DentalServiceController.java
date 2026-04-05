@@ -1,6 +1,7 @@
 package com.smilecare.smilecare_backend.dentalservice.controller;
 
 import com.smilecare.smilecare_backend.dentalservice.model.DentalService;
+import com.smilecare.smilecare_backend.dentalservice.dto.DentalServiceDTO;
 import com.smilecare.smilecare_backend.dentalservice.service.DentalServiceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/services")
@@ -25,8 +27,11 @@ public class DentalServiceController {
         try {
             logger.info("📋 Fetching all dental services");
             List<DentalService> services = service.getAllServices();
-            logger.info("✅ Found " + services.size() + " services");
-            return ResponseEntity.ok(services);
+            List<DentalServiceDTO> dtos = services.stream()
+                    .map(DentalServiceDTO::new)
+                    .collect(Collectors.toList());
+            logger.info("✅ Found " + dtos.size() + " services");
+            return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             logger.severe("❌ Error fetching services: " + e.getMessage());
             return ResponseEntity.status(500)
@@ -45,8 +50,9 @@ public class DentalServiceController {
             }
             
             DentalService created = service.createService(dentalService);
+            DentalServiceDTO dto = new DentalServiceDTO(created);
             logger.info("✅ Service created successfully (ID: " + created.getId() + ")");
-            return ResponseEntity.ok(created);
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             logger.severe("❌ Error creating service: " + e.getMessage());
             return ResponseEntity.status(500)
@@ -70,8 +76,9 @@ public class DentalServiceController {
                 return ResponseEntity.notFound().build();
             }
             
+            DentalServiceDTO dto = new DentalServiceDTO(updated);
             logger.info("✅ Service updated successfully");
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             logger.severe("❌ Error updating service: " + e.getMessage());
             return ResponseEntity.status(500)
