@@ -420,7 +420,7 @@ int clinicDayOfWeek = javaDayOfWeek == 7 ? 6 : javaDayOfWeek - 1; // 0-6
 5. ✅ [AppointmentService.java](smilecare-backend/src/main/java/com/smilecare/smilecare_backend/appointment/service/AppointmentService.java)
 6. ✅ [AppointmentController.java](smilecare-backend/src/main/java/com/smilecare/smilecare_backend/appointment/controller/AppointmentController.java)
 7. ✅ [DataLoader.java](smilecare-backend/src/main/java/com/smilecare/smilecare_backend/DataLoader.java)
-8. ✅ [api.js](smilecare-frontend/src/api/api.js) - Frontend API integration
+8. ✅ [api.js](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/api/api.js) - Frontend API integration
 
 ---
 

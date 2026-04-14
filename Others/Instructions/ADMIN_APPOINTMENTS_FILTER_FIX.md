@@ -23,7 +23,7 @@ When admin approves appointments, the count updates correctly (e.g., "Approved (
 
 Added a **filter-to-status mapping** that bridges the gap between filter names and internal status values.
 
-### Changes in [AdminApptsPage.jsx](smilecare-frontend/src/pages/AdminApptsPage.jsx):
+### Changes in [AdminApptsPage.jsx](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/pages/AdminApptsPage.jsx):
 
 ```javascript
 // Map filter names to actual status display names
@@ -120,7 +120,7 @@ Shows confirmed appointments! ✅
 
 ## Files Changed
 
-- **[AdminApptsPage.jsx](smilecare-frontend/src/pages/AdminApptsPage.jsx)** - Added filter mapping logic
+- **[AdminApptsPage.jsx](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/pages/AdminApptsPage.jsx)** - Added filter mapping logic
 
 ## Result
 
