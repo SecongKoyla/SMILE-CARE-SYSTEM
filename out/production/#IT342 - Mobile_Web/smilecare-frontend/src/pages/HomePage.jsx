@@ -106,7 +106,7 @@ export default function HomePage({ user, appointments, setPage }) {
                 { icon: "📅", label: "Book Appointment", sub: "Schedule a new visit",   page: "book" },
                 { icon: "📋", label: "My Appointments",  sub: "View dental history",    page: "appointments" },
                 { icon: "✨", label: "Services",          sub: "Browse treatments",      page: "services" },
-                { icon: "💬", label: "Message Doctor",   sub: "Send a quick note",      page: null },
+                { icon: "�", label: "Notifications",    sub: "System updates",         page: null },
               ].map(a => (
                 <button
                   key={a.label}

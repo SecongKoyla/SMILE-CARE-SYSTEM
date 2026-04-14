@@ -3,50 +3,161 @@
 import { useState } from "react";
 import Modal from "../components/Modal.jsx";
 import { ICON_OPTIONS } from "../data/constants.js";
+import { addService, updateService, deleteService } from "../api/api.js";
 
-const EMPTY_FORM = { icon: "🦷", name: "", desc: "", price: "", duration: "" };
+const EMPTY_FORM = { 
+  icon: "🦷", 
+  name: "", 
+  desc: "", 
+  price: "", 
+  duration: "",
+  durationUnit: "minutes" // "minutes" or "hours"
+};
+
+// Helper function to format price display
+const formatPrice = (price) => {
+  if (!price) return "₱0";
+  return `₱${parseFloat(price).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+};
+
+// Helper function to format duration display
+const formatDuration = (service) => {
+  if (!service) return "N/A";
+  
+  // Directly use the fields we expect from the DTO
+  const mins = service.duration_minutes || service.durationMinutes || 30;
+  const unit = service.duration_unit || service.durationUnit || "minutes";
+  
+  if (unit === "hours") {
+    return (mins / 60) + " hr";
+  }
+  
+  return mins + " min";
+};
 
 export default function AdminServicesPage({ services, setServices }) {
   const [showModal, setShowModal]   = useState(false);
   const [editTarget, setEditTarget] = useState(null); // null = add mode
   const [form, setForm]             = useState(EMPTY_FORM);
   const [deleteId, setDeleteId]     = useState(null);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState(null);
 
   // ── Open add modal ──
   const openAdd = () => {
     setEditTarget(null);
     setForm(EMPTY_FORM);
     setShowModal(true);
+    setError(null);
   };
 
   // ── Open edit modal ──
   const openEdit = (service) => {
+    // Extract directly from what backend sends
+    const tempMins = service.duration_minutes || service.durationMinutes || 30;
+    const tempUnit = service.duration_unit || service.durationUnit || "minutes";
+    
+    // Set form fields based on unit
+    let formDuration = "";
+    if (tempUnit === "hours") {
+      formDuration = String(tempMins / 60);
+    } else {
+      formDuration = String(tempMins);
+    }
+    
     setEditTarget(service.id);
-    setForm({ icon: service.icon, name: service.name, desc: service.desc, price: service.price, duration: service.duration });
+    setForm({ 
+      icon: service.icon, 
+      name: service.name, 
+      desc: service.description || service.desc, 
+      price: service.price || "", 
+      duration: formDuration,
+      durationUnit: tempUnit
+    });
     setShowModal(true);
+    setError(null);
   };
 
   // ── Save (add or update) ──
-  const handleSave = () => {
-    if (!form.name.trim() || !form.price.trim()) return;
-
-    if (editTarget === null) {
-      // Add new
-      const newService = { ...form, id: Date.now() };
-      setServices(prev => [...prev, newService]);
-    } else {
-      // Update existing
-      setServices(prev =>
-        prev.map(s => s.id === editTarget ? { ...s, ...form } : s)
-      );
+  const handleSave = async () => {
+    // Validation
+    if (!form.name.trim()) {
+      setError("Service name is required");
+      return;
     }
-    setShowModal(false);
+
+    const priceNum = parseFloat(form.price);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      setError("Price must be a valid number greater than 0");
+      return;
+    }
+
+    const durationNum = form.duration ? parseInt(form.duration) : null;
+    if (form.duration && (isNaN(durationNum) || durationNum <= 0)) {
+      setError("Duration must be a valid number greater than 0");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Prepare data for backend
+      let durationMin = null;
+      if (form.duration && parseInt(form.duration) > 0) {
+        const durationValue = parseInt(form.duration);
+        // Convert to minutes if hours selected
+        durationMin = form.durationUnit === "hours" ? durationValue * 60 : durationValue;
+      }
+
+      const dataToSend = {
+        icon: form.icon,
+        name: form.name.trim(),
+        desc: form.desc.trim(),
+        price: priceNum,
+        duration_minutes: durationMin, // Send as duration_minutes
+        durationUnit: form.durationUnit || "minutes"
+      };
+
+      if (editTarget === null) {
+        // Add new service to backend
+        console.log("➕ Adding new service...", dataToSend);
+        const newService = await addService(dataToSend);
+        console.log("✅ Service added:", newService);
+        setServices(prev => [...prev, newService]);
+      } else {
+        // Update existing service in backend
+        console.log("✏️ Updating service...", dataToSend);
+        const updated = await updateService(editTarget, dataToSend);
+        console.log("✅ Service updated:", updated);
+        setServices(prev =>
+          prev.map(s => s.id === editTarget ? { ...s, ...updated } : s)
+        );
+      }
+      setShowModal(false);
+      setError(null);
+    } catch (err) {
+      console.error("❌ Error saving service:", err);
+      setError(err.message || "Failed to save service");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── Delete ──
-  const handleDelete = (id) => {
-    setServices(prev => prev.filter(s => s.id !== id));
-    setDeleteId(null);
+  const handleDelete = async (id) => {
+    setLoading(true);
+    try {
+      console.log("🗑️ Deleting service...");
+      await deleteService(id);
+      console.log("✅ Service deleted");
+      setServices(prev => prev.filter(s => s.id !== id));
+      setDeleteId(null);
+      setError(null);
+    } catch (err) {
+      console.error("❌ Error deleting service:", err);
+      setError(err.message || "Failed to delete service");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const field = (key) => ({
@@ -66,8 +177,15 @@ export default function AdminServicesPage({ services, setServices }) {
         </div>
       </div>
 
+      {/* Error message */}
+      {error && (
+        <div style={{ background: "#fee", borderLeft: "4px solid #f66", padding: "12px", borderRadius: "8px", marginBottom: "16px" }}>
+          <p style={{ color: "#c00", margin: "0", fontSize: "13px" }}>⚠️ {error}</p>
+        </div>
+      )}
+
       {/* Add button */}
-      <button className="add-service-btn" onClick={openAdd}>
+      <button className="add-service-btn" onClick={openAdd} disabled={loading}>
         <span style={{ fontSize: 20 }}>＋</span>
         Add New Service
       </button>
@@ -87,10 +205,10 @@ export default function AdminServicesPage({ services, setServices }) {
               <div className="admin-service-icon">{s.icon}</div>
               <div className="admin-service-body">
                 <div className="admin-service-name">{s.name}</div>
-                <div className="admin-service-desc">{s.desc || "No description."}</div>
+                <div className="admin-service-desc">{s.description || s.desc || "No description."}</div>
                 <div className="admin-service-meta">
-                  <span className="admin-service-price">{s.price}</span>
-                  <span className="admin-service-dur">· {s.duration}</span>
+                  <span className="admin-service-price">{formatPrice(s.price)}</span>
+                  <span className="admin-service-dur">· {formatDuration(s)}</span>
                 </div>
               </div>
               <div className="admin-service-actions">
@@ -108,6 +226,13 @@ export default function AdminServicesPage({ services, setServices }) {
           title={editTarget === null ? "Add New Service" : "Edit Service"}
           onClose={() => setShowModal(false)}
         >
+          {/* Error in modal */}
+          {error && (
+            <div style={{ background: "#fee", borderLeft: "4px solid #f66", padding: "10px", borderRadius: "6px", marginBottom: "12px" }}>
+              <p style={{ color: "#c00", margin: "0", fontSize: "12px" }}>{error}</p>
+            </div>
+          )}
+
           {/* Icon picker */}
           <div className="sc-form-group">
             <label className="sc-label">Icon</label>
@@ -116,14 +241,16 @@ export default function AdminServicesPage({ services, setServices }) {
                 <button
                   key={ico}
                   onClick={() => setForm(p => ({ ...p, icon: ico }))}
+                  disabled={loading}
                   style={{
                     width: 40, height: 40,
                     borderRadius: 8,
                     border: form.icon === ico ? "2px solid var(--mint)" : "1.5px solid var(--gray-border)",
                     background: form.icon === ico ? "var(--mint-light)" : "var(--white)",
                     fontSize: 20,
-                    cursor: "pointer",
+                    cursor: loading ? "not-allowed" : "pointer",
                     transition: "all 0.15s",
+                    opacity: loading ? 0.6 : 1,
                   }}
                 >
                   {ico}
@@ -136,18 +263,63 @@ export default function AdminServicesPage({ services, setServices }) {
           <div className="sc-form-row">
             <div>
               <label className="sc-label">Service Name *</label>
-              <input className="sc-input" placeholder="e.g. Teeth Cleaning" {...field("name")} />
+              <input className="sc-input" placeholder="e.g. Teeth Cleaning" disabled={loading} {...field("name")} />
             </div>
             <div>
-              <label className="sc-label">Price *</label>
-              <input className="sc-input" placeholder="e.g. ₱800" {...field("price")} />
+              <label className="sc-label">Price (₱) *</label>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "14px", fontWeight: "600", color: "#4ecba6" }}>₱</span>
+                <input 
+                  className="sc-input" 
+                  type="number"
+                  placeholder="800" 
+                  disabled={loading}
+                  min="0"
+                  step="10"
+                  value={form.price}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || /^\d+(\.\d{0,2})?$/.test(val)) {
+                      setForm(prev => ({ ...prev, price: val }));
+                    }
+                  }}
+                  style={{ flex: 1 }}
+                />
+              </div>
             </div>
           </div>
 
           {/* Duration */}
           <div className="sc-form-group">
-            <label className="sc-label">Duration</label>
-            <input className="sc-input" placeholder="e.g. 45 min" {...field("duration")} />
+            <label className="sc-label">Service Duration</label>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <div style={{ flex: 1 }}>
+                <input 
+                  className="sc-input" 
+                  type="number"
+                  placeholder="e.g. 30" 
+                  disabled={loading}
+                  min="1"
+                  value={form.duration}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || /^\d+$/.test(val)) {
+                      setForm(prev => ({ ...prev, duration: val }));
+                    }
+                  }}
+                />
+              </div>
+              <select 
+                className="sc-input"
+                disabled={loading}
+                value={form.durationUnit || "minutes"}
+                onChange={(e) => setForm(prev => ({ ...prev, durationUnit: e.target.value }))}
+                style={{ flex: 0.8 }}
+              >
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+              </select>
+            </div>
           </div>
 
           {/* Description */}
@@ -157,6 +329,7 @@ export default function AdminServicesPage({ services, setServices }) {
               className="sc-input"
               rows={3}
               placeholder="Brief description of the service..."
+              disabled={loading}
               style={{ resize: "vertical", lineHeight: 1.6 }}
               {...field("desc")}
             />
@@ -164,16 +337,16 @@ export default function AdminServicesPage({ services, setServices }) {
 
           {/* Actions */}
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-            <button className="btn-ghost" onClick={() => setShowModal(false)} style={{ flex: 1 }}>
+            <button className="btn-ghost" onClick={() => setShowModal(false)} disabled={loading} style={{ flex: 1 }}>
               Cancel
             </button>
             <button
               className="btn-primary"
               onClick={handleSave}
-              disabled={!form.name.trim() || !form.price.trim()}
-              style={{ flex: 2 }}
+              disabled={!form.name.trim() || !form.price.trim() || loading}
+              style={{ flex: 2, opacity: loading ? 0.6 : 1 }}
             >
-              {editTarget === null ? "Add Service" : "Save Changes"}
+              {loading ? (editTarget === null ? "Adding..." : "Saving...") : (editTarget === null ? "Add Service" : "Save Changes")}
             </button>
           </div>
         </Modal>
@@ -190,19 +363,21 @@ export default function AdminServicesPage({ services, setServices }) {
             This cannot be undone.
           </p>
           <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn-ghost" onClick={() => setDeleteId(null)} style={{ flex: 1 }}>
+            <button className="btn-ghost" onClick={() => setDeleteId(null)} disabled={loading} style={{ flex: 1 }}>
               Cancel
             </button>
             <button
               onClick={() => handleDelete(deleteId)}
+              disabled={loading}
               style={{
                 flex: 2, padding: "13px 24px", border: "none",
-                borderRadius: "var(--radius-sm)", background: "var(--red-txt)",
+                borderRadius: "var(--radius-sm)", background: loading ? "#ccc" : "var(--red-txt)",
                 color: "white", fontFamily: "'Nunito', sans-serif",
-                fontSize: 14, fontWeight: 700, cursor: "pointer",
+                fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
               }}
             >
-              Delete Service
+              {loading ? "Deleting..." : "Delete Service"}
             </button>
           </div>
         </Modal>

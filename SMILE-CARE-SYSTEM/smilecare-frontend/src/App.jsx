@@ -24,6 +24,8 @@ import ProfilePage      from "./pages/ProfilePage.jsx";
 // Pages — admin
 import AdminServicesPage from "./pages/AdminServicePage.jsx";
 import AdminApptsPage    from "./pages/AdminApptsPage.jsx";
+import AdminAvailabilityPage from "./pages/AdminAvailabilityPage.jsx";
+import AdminClientsPage  from "./pages/AdminClientsPage.jsx";
 
 // API
 import { getServices, getUserAppointments } from "./api/api.js";
@@ -70,7 +72,7 @@ export default function App() {
   // Router page
   const [page, setPage] = useState(() => {
     const persistedUser = getPersistedUser();
-    return persistedUser?.role === "ADMIN" ? "admin-services" : "home";
+    return persistedUser?.role === "ADMIN" ? "admin-appts" : "home";
   });
 
   const [showRegister, setShowRegister] = useState(false);
@@ -107,12 +109,19 @@ export default function App() {
   useEffect(() => {
     const fetchServicesFromBackend = async () => {
       try {
+        console.log("🔄 Fetching services from backend...");
         const backendServices = await getServices();
+        console.log("✅ Services received:", backendServices);
+        console.log("📊 Service count:", backendServices?.length || 0);
+        
         if (backendServices && backendServices.length > 0) {
+          console.log("✓ Setting services from backend");
           setServices(backendServices);
+        } else {
+          console.warn("⚠️ No services from backend, using defaults");
         }
       } catch (err) {
-        console.error("Failed to fetch services from backend, using defaults");
+        console.error("❌ Failed to fetch services from backend:", err);
         // Keep using localStorage saved services or INITIAL_SERVICES
       }
     };
@@ -132,7 +141,7 @@ export default function App() {
 
     setPage(
         normalizedUser?.role === "ADMIN"
-            ? "admin-services"
+            ? "admin-appts"
             : "home"
     );
   };
@@ -143,19 +152,17 @@ export default function App() {
 
     setUser(normalizedUser);
     localStorage.setItem("user", JSON.stringify(normalizedUser));
-
+    
     setPage(
         normalizedUser?.role === "ADMIN"
-            ? "admin-services"
+            ? "admin-appts"
             : "home"
     );
   };
 
-
   const handleLogout = () => {
-
     setUser(null);
-
+    localStorage.removeItem("token");
     localStorage.removeItem("user");
 
     setPage("home");
@@ -177,11 +184,10 @@ export default function App() {
         
         // Map backend appointments to display format
         const statusMap = {
-          "APPROVED": "confirmed",
+          "APPROVED": "approved",
           "PENDING": "pending",
           "CANCELLED": "cancelled",
-          "ARRIVED": "confirmed",
-          "COMPLETED": "confirmed"
+          "COMPLETED": "completed"
         };
 
         const transformed = userAppts.map(appt => ({
@@ -304,6 +310,15 @@ export default function App() {
             <AdminApptsPage />
         );
 
+      case "admin-availability":
+        return (
+            <AdminAvailabilityPage />
+        );
+        
+      case "admin-clients":
+        return (
+            <AdminClientsPage />
+        );
 
       default:
         return (
