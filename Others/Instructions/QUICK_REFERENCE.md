@@ -271,9 +271,9 @@ User Booking (http://localhost:3000/book):
 
 ## Files Available for Review
 
-📄 [CLINIC_HOURS_FIX_SUMMARY.md](./CLINIC_HOURS_FIX_SUMMARY.md) - Complete technical details
-📄 [IMPLEMENTATION_VERIFICATION.md](./IMPLEMENTATION_VERIFICATION.md) - Detailed verification tests
-📄 [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) - This file
+📄 [CLINIC_HOURS_FIX_SUMMARY.md](CLINIC_HOURS_FIX_SUMMARY.md) - Complete technical details
+📄 [IMPLEMENTATION_VERIFICATION.md](IMPLEMENTATION_VERIFICATION.md) - Detailed verification tests
+📄 [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - This file
 
 ---
 

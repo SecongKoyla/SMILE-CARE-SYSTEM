@@ -45,7 +45,7 @@ Sunday → Monday → Tuesday → Wednesday → Thursday → Friday → Saturday
 
 ## The DAY_MAPPING Solution
 
-**File:** [AdminAvailabilityPage.jsx](smilecare-frontend/src/pages/AdminAvailabilityPage.jsx)
+**File:** [AdminAvailabilityPage.jsx](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/pages/AdminAvailabilityPage.jsx)
 
 ```javascript
 const DAY_MAPPING = [

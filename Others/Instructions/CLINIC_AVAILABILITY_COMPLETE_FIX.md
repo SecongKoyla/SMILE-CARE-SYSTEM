@@ -50,7 +50,7 @@ const DAY_MAPPING = [
 
 ## Changes Implemented
 
-### File: [AdminAvailabilityPage.jsx](smilecare-frontend/src/pages/AdminAvailabilityPage.jsx)
+### File: [AdminAvailabilityPage.jsx](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/pages/AdminAvailabilityPage.jsx)
 
 #### 1. **Added DAY_MAPPING**
 Maps display order (Sunday-Saturday) to backend indices (0-6 as Monday-Sunday)

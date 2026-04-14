@@ -20,7 +20,7 @@ ERROR: current transaction is aborted, commands ignored until end of transaction
 
 ### 1. Backend - Transaction Management
 
-**File**: [AppointmentService.java](smilecare-backend/smilecare-backend/src/main/java/com/smilecare/smilecare_backend/appointment/service/AppointmentService.java)
+**File**: [AppointmentService.java](../../SMILE-CARE-SYSTEM/smilecare-backend/smilecare-backend/src/main/java/com/smilecare/smilecare_backend/appointment/service/AppointmentService.java)
 
 #### Changes:
 ```java
@@ -56,7 +56,7 @@ public class AppointmentService {
 
 ### 2. Backend - Data Transfer Objects (DTOs)
 
-**File**: [AppointmentResponseDTO.java](smilecare-backend/smilecare-backend/src/main/java/com/smilecare/smilecare_backend/appointment/dto/AppointmentResponseDTO.java) *(Created)*
+**File**: [AppointmentResponseDTO.java](../../SMILE-CARE-SYSTEM/smilecare-backend/smilecare-backend/src/main/java/com/smilecare/smilecare_backend/appointment/dto/AppointmentResponseDTO.java) *(Created)*
 
 #### Key Features:
 - Excludes sensitive data (passwordHash, profilePhoto)
@@ -96,7 +96,7 @@ public class AppointmentResponseDTO {
 
 ### 3. Backend - Controller Updates
 
-**File**: [AppointmentController.java](smilecare-backend/smilecare-backend/src/main/java/com/smilecare/smilecare_backend/appointment/controller/AppointmentController.java)
+**File**: [AppointmentController.java](../../SMILE-CARE-SYSTEM/smilecare-backend/smilecare-backend/src/main/java/com/smilecare/smilecare_backend/appointment/controller/AppointmentController.java)
 
 #### Changes:
 ```java
@@ -158,7 +158,7 @@ public ResponseEntity<?> bookAppointment(@Valid @RequestBody AppointmentRequest 
 
 ### 4. Backend - User Model Security
 
-**File**: [User.java](smilecare-backend/smilecare-backend/src/main/java/com/smilecare/smilecare_backend/user/model/User.java)
+**File**: [User.java](../../SMILE-CARE-SYSTEM/smilecare-backend/smilecare-backend/src/main/java/com/smilecare/smilecare_backend/user/model/User.java)
 
 #### Changes:
 ```java
@@ -187,7 +187,7 @@ public class User {
 
 ### 5. Frontend - Retry Logic
 
-**File**: [api.js](smilecare-frontend/src/api/api.js)
+**File**: [api.js](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/api/api.js)
 
 #### New Helper Function:
 ```javascript
@@ -283,7 +283,7 @@ export async function getAllAppointments() {
 
 ### 6. Frontend - Enhanced AdminApptsPage Component
 
-**File**: [AdminApptsPage.jsx](smilecare-frontend/src/pages/AdminApptsPage.jsx)
+**File**: [AdminApptsPage.jsx](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/pages/AdminApptsPage.jsx)
 
 #### Enhancements:
 ```javascript

@@ -13,7 +13,7 @@ All three major remaining issues have been fixed to ensure full consistency acro
 - Labels should reflect actual availability based on clinic hours configuration
 
 ### Solution
-**File:** [AdminAvailabilityPage.jsx](smilecare-frontend/src/pages/AdminAvailabilityPage.jsx#L395-L402)
+**File:** [AdminAvailabilityPage.jsx](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/pages/AdminAvailabilityPage.jsx#L395-L402)
 
 **Change:**
 ```javascript
@@ -48,7 +48,7 @@ All three major remaining issues have been fixed to ensure full consistency acro
 - Calendar grid alignment was inconsistent
 
 ### Solution
-**File:** [BookingCalendar.jsx](smilecare-frontend/src/components/BookingCalendar.jsx#L151)
+**File:** [BookingCalendar.jsx](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/components/BookingCalendar.jsx#L151)
 
 **Change:**
 ```javascript
@@ -172,8 +172,8 @@ Admin Clinic Availability already has:
 
 | File | Changes | Status |
 |------|---------|--------|
-| [AdminAvailabilityPage.jsx](smilecare-frontend/src/pages/AdminAvailabilityPage.jsx) | Removed "(Rest day)" label from Sunday | ✅ Complete |
-| [BookingCalendar.jsx](smilecare-frontend/src/components/BookingCalendar.jsx) | Changed day headers from Mon-Sun to Sun-Sat | ✅ Complete |
+| [AdminAvailabilityPage.jsx](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/pages/AdminAvailabilityPage.jsx) | Removed "(Rest day)" label from Sunday | ✅ Complete |
+| [BookingCalendar.jsx](../../SMILE-CARE-SYSTEM/smilecare-frontend/src/components/BookingCalendar.jsx) | Changed day headers from Mon-Sun to Sun-Sat | ✅ Complete |
 
 ## No Changes Required
 
