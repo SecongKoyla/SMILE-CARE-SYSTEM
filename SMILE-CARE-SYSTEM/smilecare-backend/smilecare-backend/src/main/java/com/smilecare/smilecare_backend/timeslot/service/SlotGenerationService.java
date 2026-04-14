@@ -2,6 +2,7 @@ package com.smilecare.smilecare_backend.timeslot.service;
 
 import com.smilecare.smilecare_backend.common.model.ClinicHours;
 import com.smilecare.smilecare_backend.common.service.ClinicHoursService;
+import com.smilecare.smilecare_backend.common.service.ClinicDateExceptionService;
 import com.smilecare.smilecare_backend.timeslot.dto.TimeSlotDTO;
 import com.smilecare.smilecare_backend.timeslot.model.TimeSlotStatus;
 import org.springframework.stereotype.Service;
@@ -15,10 +16,12 @@ import java.util.logging.Logger;
 public class SlotGenerationService {
 
     private final ClinicHoursService clinicHoursService;
+    private final ClinicDateExceptionService exceptionService;
     private static final Logger logger = Logger.getLogger(SlotGenerationService.class.getName());
 
-    public SlotGenerationService(ClinicHoursService clinicHoursService) {
+    public SlotGenerationService(ClinicHoursService clinicHoursService, ClinicDateExceptionService exceptionService) {
         this.clinicHoursService = clinicHoursService;
+        this.exceptionService = exceptionService;
     }
 
     /**
@@ -40,6 +43,12 @@ public class SlotGenerationService {
             int dayOfWeek = date.getDayOfWeek().getValue(); // Mon=1, Sun=7
             int clinicDayOfWeek = dayOfWeek == 7 ? 6 : dayOfWeek - 1; // Mon=0, Sun=6
             
+            // Check if there is an exception for this specific date
+            if (exceptionService.getExceptionByDate(date).isPresent()) {
+                logger.info("ℹ️ Clinic is closed on " + date + " due to a specific date exception");
+                return slots;
+            }
+
             ClinicHours hours = clinicHoursService.getClinicHoursForDay(clinicDayOfWeek);
             
             if (hours == null || !hours.getIsOperating()) {
@@ -79,6 +88,12 @@ public class SlotGenerationService {
         List<TimeSlotDTO> slots = new ArrayList<>();
         
         try {
+            // Check if there is an exception for this specific date
+            if (exceptionService.getExceptionByDate(date).isPresent()) {
+                logger.info("ℹ️ Clinic is closed on " + date + " due to a specific date exception");
+                return slots;
+            }
+
             if (clinicHours == null || !clinicHours.getIsOperating()) {
                 logger.info("ℹ️ Clinic closed on " + date);
                 return slots;

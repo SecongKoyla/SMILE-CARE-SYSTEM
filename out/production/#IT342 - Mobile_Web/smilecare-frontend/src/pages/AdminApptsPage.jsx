@@ -5,7 +5,7 @@ import AppointmentCard from "../components/AppointmentCard.jsx";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.jsx";
 import { getAllAppointments, updateAppointmentStatus, deleteAppointment } from "../api/api.js";
 
-const FILTERS = ["all", "approved", "pending", "cancelled"];
+const FILTERS = ["all", "approved", "pending", "completed", "cancelled"];
 
 export default function AdminApptsPage() {
   const [appointments, setAppointments] = useState([]);
@@ -30,6 +30,10 @@ export default function AdminApptsPage() {
     deleteError: null,
     successMessage: null,
   });
+
+  // Booking Settings Modal state
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [daysInAdvance, setDaysInAdvance] = useState(() => localStorage.getItem("bookingWindowDays") || "60");
 
   useEffect(() => {
     fetchAppointments();
@@ -201,26 +205,27 @@ export default function AdminApptsPage() {
 
   // Map backend status to display status
   const statusMap = {
-    "APPROVED": "confirmed",
+    "APPROVED": "approved",
     "PENDING": "pending",
     "CANCELLED": "cancelled",
-    "ARRIVED": "confirmed",
-    "COMPLETED": "confirmed"
+    "COMPLETED": "completed"
   };
 
   // Map filter names to actual status display names
   // This is needed because filters use "approved" but statuses map to "confirmed"
   const filterToStatusMap = {
     "all": null,           // null means show all
-    "approved": "confirmed",
+    "approved": "approved",
     "pending": "pending",
+    "completed": "completed",
     "cancelled": "cancelled"
   };
 
   // Map for display labels (what to show in empty state and logs)
   const filterLabelMap = {
-    "approved": "confirmed",
+    "approved": "approved",
     "pending": "pending",
+    "completed": "completed",
     "cancelled": "cancelled"
   };
 
@@ -296,8 +301,9 @@ export default function AdminApptsPage() {
   }
 
   const counts = {
-    confirmed: displayAppointments.filter(a => a.status === "confirmed").length,
+    approved:  displayAppointments.filter(a => a.status === "approved").length,
     pending:   displayAppointments.filter(a => a.status === "pending").length,
+    completed: displayAppointments.filter(a => a.status === "completed").length,
     cancelled: displayAppointments.filter(a => a.status === "cancelled").length,
   };
 
@@ -309,23 +315,62 @@ export default function AdminApptsPage() {
 
   const handlePrevMonth = () => setCurrentMonthDate(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentMonthDate(new Date(year, month + 1, 1));
+  
+  // Custom Month Dropdown handler
+  const handleMonthDropdown = (e) => {
+    const selectedMonth = parseInt(e.target.value, 10);
+    setCurrentMonthDate(new Date(year, selectedMonth, 1));
+  };
+  
+  // Custom Year Dropdown handler
+  const handleYearDropdown = (e) => {
+    const selectedYear = parseInt(e.target.value, 10);
+    setCurrentMonthDate(new Date(selectedYear, month, 1));
+  };
+
+  const saveSettings = () => {
+    localStorage.setItem("bookingWindowDays", daysInAdvance);
+    setShowSettingsModal(false);
+  };
 
   return (
     <main className="sc-main page-enter">
-      <div className="page-header">
+      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h1>All Appointments</h1>
           <p>Manage and track all patient appointments across the clinic</p>
         </div>
+        <button 
+          onClick={() => setShowSettingsModal(true)}
+          style={{ 
+            padding: "10px 20px", 
+            borderRadius: "12px", 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "8px",
+            background: "var(--navy)",
+            color: "#fff",
+            border: "none",
+            fontWeight: "600",
+            cursor: "pointer",
+            boxShadow: "var(--shadow-sm)",
+            transition: "all 0.2s"
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+          onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+        >
+          <span style={{ fontSize: "18px" }}>⚙️</span> Booking Settings
+        </button>
       </div>
 
       {/* Summary stats */}
-      <div className="stats">
+      <div className="stats" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
         {[
           { icon: "📅", label: "Total",     value: appointments.length },
-          { icon: "✅", label: "Confirmed", value: counts.confirmed },
+          { icon: "✅", label: "Approved",  value: counts.approved },
           { icon: "⏳", label: "Pending",   value: counts.pending },
-          { icon: "❌", label: "Cancelled", value: displayAppointments.filter(a => a.status === "cancelled").length },
+          { icon: "🏁", label: "Completed", value: counts.completed },
+          { icon: "❌", label: "Cancelled", value: counts.cancelled },
         ].map(s => (
           <div key={s.label} className="stat">
             <div className="stat-icon">{s.icon}</div>
@@ -347,8 +392,9 @@ export default function AdminApptsPage() {
           >
             {f.charAt(0).toUpperCase() + f.slice(1)} 
             {f !== "all" && ` (${
-              f === "approved" ? counts.confirmed : 
-              f === "pending" ? counts.pending : 
+              f === "approved" ? counts.approved : 
+              f === "pending" ? counts.pending :
+              f === "completed" ? counts.completed :
               counts.cancelled
             })`}
           </button>
@@ -369,11 +415,100 @@ export default function AdminApptsPage() {
                  Clear Date Filter
                </button>
             )}
-            <button className="btn-icon" onClick={handlePrevMonth} style={{ background: "#f8fafc" }}>←</button>
-            <div style={{ fontWeight: "600", minWidth: "140px", textAlign: "center", color: "var(--navy)" }}>
-              {currentMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+            <button
+              onClick={handlePrevMonth}
+              className="btn-outline"
+              style={{
+                borderRadius: "50%",
+                width: "36px",
+                height: "36px",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                border: "1px solid var(--mint)",
+                color: "var(--mint)",
+                background: "var(--mint-light)",
+                boxShadow: "var(--shadow-sm)"
+              }}
+            >
+              ←
+            </button>
+            <div style={{ display: "flex", gap: "8px", fontWeight: "600", minWidth: "180px", justifyContent: "center" }}>
+              <select 
+                value={month} 
+                onChange={handleMonthDropdown}
+                className="custom-select-month"
+                style={{ 
+                  appearance: "none",
+                  border: "2px solid #e2e8f0", 
+                  borderRadius: "12px", 
+                  padding: "8px 14px", 
+                  paddingRight: "30px", // space for down arrow
+                  background: "#ffffff url('data:image/svg+xml;utf8,<svg fill=\"none\" height=\"20\" viewBox=\"0 0 20 20\" width=\"20\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5.29289 7.29289C5.68342 6.90237 6.31658 6.90237 6.70711 7.29289L10 10.5858L13.2929 7.29289C13.6834 6.90237 14.3166 6.90237 14.7071 7.29289C15.0976 7.68342 15.0976 8.31658 14.7071 8.70711L10.7071 12.7071C10.3166 13.0976 9.68342 13.0976 9.29289 12.7071L5.29289 8.70711C4.90237 8.31658 4.90237 7.68342 5.29289 7.29289Z\" fill=\"%2364748B\"/></svg>') no-repeat right 8px center",
+                  color: "var(--navy)",
+                  fontSize: "15px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  outline: "none",
+                  boxShadow: "var(--shadow-sm)",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => e.target.style.borderColor = "var(--mint)"}
+                onMouseLeave={(e) => e.target.style.borderColor = "#e2e8f0"}
+              >
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <option key={i} value={i}>{new Date(year, i, 1).toLocaleString('default', { month: 'long' })}</option>
+                ))}
+              </select>
+              <select 
+                value={year} 
+                onChange={handleYearDropdown}
+                className="custom-select-year"
+                style={{ 
+                  appearance: "none",
+                  border: "2px solid #e2e8f0", 
+                  borderRadius: "12px", 
+                  padding: "8px 14px", 
+                  paddingRight: "30px",
+                  background: "#ffffff url('data:image/svg+xml;utf8,<svg fill=\"none\" height=\"20\" viewBox=\"0 0 20 20\" width=\"20\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5.29289 7.29289C5.68342 6.90237 6.31658 6.90237 6.70711 7.29289L10 10.5858L13.2929 7.29289C13.6834 6.90237 14.3166 6.90237 14.7071 7.29289C15.0976 7.68342 15.0976 8.31658 14.7071 8.70711L10.7071 12.7071C10.3166 13.0976 9.68342 13.0976 9.29289 12.7071L5.29289 8.70711C4.90237 8.31658 4.90237 7.68342 5.29289 7.29289Z\" fill=\"%2364748B\"/></svg>') no-repeat right 8px center",
+                  color: "var(--navy)",
+                  fontSize: "15px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  outline: "none",
+                  boxShadow: "var(--shadow-sm)",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => e.target.style.borderColor = "var(--mint)"}
+                onMouseLeave={(e) => e.target.style.borderColor = "#e2e8f0"}
+              >
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <option key={i} value={new Date().getFullYear() + i - 1}>{new Date().getFullYear() + i - 1}</option>
+                ))}
+              </select>
             </div>
-            <button className="btn-icon" onClick={handleNextMonth} style={{ background: "#f8fafc" }}>→</button>
+            <button
+              onClick={handleNextMonth}
+              className="btn-outline"
+              style={{
+                borderRadius: "50%",
+                width: "36px",
+                height: "36px",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                border: "1px solid var(--mint)",
+                color: "var(--mint)",
+                background: "var(--mint-light)",
+                boxShadow: "var(--shadow-sm)"
+              }}
+            >
+              →
+            </button>
           </div>
         </div>
 
@@ -409,9 +544,9 @@ export default function AdminApptsPage() {
                   padding: "8px 4px",
                   borderRadius: "12px",
                   cursor: "pointer",
-                  background: isSelected ? "var(--teal)" : isToday ? "#f1f5f9" : "transparent",
+                  background: isSelected ? "var(--mint)" : isToday ? "#f1f5f9" : "transparent",
                   color: isSelected ? "white" : "var(--navy)",
-                  border: isToday && !isSelected ? "1px solid var(--teal)" : "1px solid transparent",
+                  border: isToday && !isSelected ? "1px solid var(--mint)" : "1px solid transparent",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
@@ -432,7 +567,8 @@ export default function AdminApptsPage() {
                          width: "8px", height: "8px", borderRadius: "50%",
                          border: isSelected ? "1px solid white" : "none",
                          background: 
-                           da.status === 'confirmed' ? '#22c55e' : // explicitly green
+                           da.status === 'approved' ? '#22c55e' : // explicitly green
+                           da.status === 'completed' ? '#0284c7' : // blue
                            da.status === 'pending' ? '#eab308' : 
                            '#ef4444' // cancelled
                        }} title={`${da.patient} - ${da.type}`} />
@@ -466,11 +602,18 @@ export default function AdminApptsPage() {
               </div>
               <div className="appt-admin-actions">
                 <button
-                  className={`status-action${a.status === "confirmed" ? " active" : ""}`}
+                  className={`status-action${a.status === "approved" ? " active" : ""}`}
                   onClick={() => handleStatusChange(a.id, "APPROVED")}
-                  title="Confirm appointment"
+                  title="Approve appointment"
                 >
-                  ✓ Confirm
+                  ✓ Approve
+                </button>
+                <button
+                  className={`status-action${a.status === "completed" ? " active" : ""}`}
+                  onClick={() => handleStatusChange(a.id, "COMPLETED")}
+                  title="Mark as completed"
+                >
+                  🏁 Complete
                 </button>
                 <button
                   className={`status-action${a.status === "pending" ? " active" : ""}`}
@@ -509,6 +652,86 @@ export default function AdminApptsPage() {
         isLoading={deleteModal.isDeleting}
         errorMessage={deleteModal.deleteError}
       />
+
+      {/* Booking Settings Modal */}
+      {showSettingsModal && (
+        <div className="modal-overlay" style={{ display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)", zIndex: 9999 }}>
+          <div className="modal-content" style={{ maxWidth: "420px", width: "100%", padding: "32px", borderRadius: "24px", background: "#ffffff", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+              <div style={{ background: "var(--mint-light)", padding: "10px", borderRadius: "12px", color: "var(--mint)", fontSize: "20px" }}>⚙️</div>
+              <h2 style={{ margin: 0, color: "var(--navy)", fontSize: "22px", fontWeight: "700" }}>Booking Settings</h2>
+            </div>
+            <p style={{ color: "#64748b", fontSize: "14px", marginBottom: "28px", lineHeight: "1.5" }}>
+              Configure how many days in advance a patient is allowed to book their appointment from the user dashboard.
+            </p>
+            <div style={{ marginBottom: "32px", background: "#f8fafc", padding: "20px", borderRadius: "16px", border: "1px solid #e2e8f0" }}>
+              <label style={{ display: "block", marginBottom: "12px", fontWeight: "600", color: "var(--navy)", fontSize: "15px" }}>Maximum Booking Distance (Days)</label>
+              <input 
+                type="number" 
+                value={daysInAdvance} 
+                onChange={(e) => setDaysInAdvance(e.target.value)}
+                min="1"
+                max="365"
+                style={{ 
+                  width: "100%", 
+                  padding: "14px 16px",
+                  borderRadius: "12px",
+                  border: "1px solid var(--navy)",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  background: "var(--navy)",
+                  color: "#ffffff",
+                  outline: "none",
+                  transition: "all 0.2s"
+                }}
+                onFocus={(e) => { e.target.style.borderColor = "var(--mint)"; e.target.style.boxShadow = "0 0 0 3px var(--mint-light)" }}
+                onBlur={(e) => { e.target.style.borderColor = "var(--navy)"; e.target.style.boxShadow = "none" }}
+              />
+            </div>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button 
+                onClick={() => setShowSettingsModal(false)}
+                style={{ 
+                  flex: 1, 
+                  padding: "14px", 
+                  borderRadius: "12px", 
+                  background: "#f1f5f9", 
+                  color: "#475569", 
+                  border: "none", 
+                  fontWeight: "600", 
+                  fontSize: "15px",
+                  cursor: "pointer",
+                  transition: "background 0.2s"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "#e2e8f0"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "#f1f5f9"}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={saveSettings}
+                style={{ 
+                  flex: 1, 
+                  padding: "14px", 
+                  borderRadius: "12px", 
+                  background: "var(--mint)", 
+                  color: "#ffffff", 
+                  border: "none", 
+                  fontWeight: "600", 
+                  fontSize: "15px",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 6px -1px rgba(34, 197, 94, 0.2)",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-1px)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

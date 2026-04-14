@@ -12,6 +12,6 @@ public class CacheConfig {
 
     @Bean(name = "cacheManager")
     public CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager("clinicHoursCache");
+        return new ConcurrentMapCacheManager("clinicHoursCache", "clinicExceptions");
     }
 }

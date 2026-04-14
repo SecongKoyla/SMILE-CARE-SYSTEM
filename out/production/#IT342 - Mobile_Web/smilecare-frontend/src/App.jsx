@@ -25,6 +25,7 @@ import ProfilePage      from "./pages/ProfilePage.jsx";
 import AdminServicesPage from "./pages/AdminServicePage.jsx";
 import AdminApptsPage    from "./pages/AdminApptsPage.jsx";
 import AdminAvailabilityPage from "./pages/AdminAvailabilityPage.jsx";
+import AdminClientsPage  from "./pages/AdminClientsPage.jsx";
 
 // API
 import { getServices, getUserAppointments } from "./api/api.js";
@@ -71,7 +72,7 @@ export default function App() {
   // Router page
   const [page, setPage] = useState(() => {
     const persistedUser = getPersistedUser();
-    return persistedUser?.role === "ADMIN" ? "admin-services" : "home";
+    return persistedUser?.role === "ADMIN" ? "admin-appts" : "home";
   });
 
   const [showRegister, setShowRegister] = useState(false);
@@ -140,7 +141,7 @@ export default function App() {
 
     setPage(
         normalizedUser?.role === "ADMIN"
-            ? "admin-services"
+            ? "admin-appts"
             : "home"
     );
   };
@@ -151,19 +152,17 @@ export default function App() {
 
     setUser(normalizedUser);
     localStorage.setItem("user", JSON.stringify(normalizedUser));
-
+    
     setPage(
         normalizedUser?.role === "ADMIN"
-            ? "admin-services"
+            ? "admin-appts"
             : "home"
     );
   };
 
-
   const handleLogout = () => {
-
     setUser(null);
-
+    localStorage.removeItem("token");
     localStorage.removeItem("user");
 
     setPage("home");
@@ -185,11 +184,10 @@ export default function App() {
         
         // Map backend appointments to display format
         const statusMap = {
-          "APPROVED": "confirmed",
+          "APPROVED": "approved",
           "PENDING": "pending",
           "CANCELLED": "cancelled",
-          "ARRIVED": "confirmed",
-          "COMPLETED": "confirmed"
+          "COMPLETED": "completed"
         };
 
         const transformed = userAppts.map(appt => ({
@@ -315,6 +313,11 @@ export default function App() {
       case "admin-availability":
         return (
             <AdminAvailabilityPage />
+        );
+        
+      case "admin-clients":
+        return (
+            <AdminClientsPage />
         );
 
       default:

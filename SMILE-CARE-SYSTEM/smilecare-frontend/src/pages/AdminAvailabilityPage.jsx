@@ -1,6 +1,7 @@
 // pages/AdminAvailabilityPage.jsx
 import { useState, useEffect } from "react";
 import { getClinicHours, updateClinicHours } from "../api/api.js";
+import { getClinicExceptions, addClinicException, deleteClinicException } from "../api/exceptionsApi.js";
 
 // Days of the week in calendar order (Sunday-Saturday)
 // But backend stores: 0=Monday, 1=Tuesday, ..., 5=Saturday, 6=Sunday
@@ -21,10 +22,51 @@ export default function AdminAvailabilityPage() {
   const [error, setError] = useState(null);
   const [editingDay, setEditingDay] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  
+  // Date Exceptions state
+  const [exceptions, setExceptions] = useState([]);
+  const [newExceptionDate, setNewExceptionDate] = useState("");
+  const [newExceptionReason, setNewExceptionReason] = useState("");
 
   useEffect(() => {
     fetchClinicHours();
+    fetchExceptions();
   }, []);
+
+  const fetchExceptions = async () => {
+    try {
+      const data = await getClinicExceptions();
+      setExceptions(data || []);
+    } catch (err) {
+      console.error("Error fetching exceptions:", err);
+    }
+  };
+
+  const handleAddException = async (e) => {
+    e.preventDefault();
+    if (!newExceptionDate) return;
+    try {
+      await addClinicException(newExceptionDate, newExceptionReason || "Closed");
+      setSuccessMsg(`Exception added for ${newExceptionDate}`);
+      setNewExceptionDate("");
+      setNewExceptionReason("");
+      fetchExceptions();
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err) {
+      setError("Failed to add exception. Date might already exist.");
+    }
+  };
+
+  const handleDeleteException = async (id) => {
+    try {
+      await deleteClinicException(id);
+      setSuccessMsg("Exception removed");
+      fetchExceptions();
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err) {
+      setError("Failed to delete exception");
+    }
+  };
 
   const fetchClinicHours = async () => {
     try {
@@ -96,6 +138,105 @@ export default function AdminAvailabilityPage() {
             />
           );
         })}
+      </div>
+
+      {/* Exceptions Section */}
+      <div style={{ marginTop: "40px", padding: "24px", backgroundColor: "#fff", borderRadius: "16px", boxShadow: "var(--shadow)", border: "1px solid #f1f5f9" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+          <div style={{ background: "var(--red-light)", padding: "10px", borderRadius: "12px", color: "var(--red)", fontSize: "20px" }}>🚫</div>
+          <h4 style={{ margin: 0, color: "var(--navy)", fontSize: "20px" }}>Date-Specific Exceptions</h4>
+        </div>
+        <p style={{ fontSize: "14px", color: "var(--gray)", marginBottom: "24px", lineHeight: "1.5" }}>
+          These specific dates override regular clinic hours and automatically mark the clinic as <strong>CLOSED</strong>. Patients will not be able to book appointments on these days.
+        </p>
+        
+        <form onSubmit={handleAddException} style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "28px", background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <div style={{ flex: "1", minWidth: "150px" }}>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--navy)", marginBottom: "6px" }}>Select Date</label>
+            <input 
+              type="date" 
+              value={newExceptionDate} 
+              onChange={e => setNewExceptionDate(e.target.value)} 
+              required 
+              style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #cbd5e1", outline: "none", fontSize: "14px" }}
+            />
+          </div>
+          <div style={{ flex: "2", minWidth: "200px" }}>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--navy)", marginBottom: "6px" }}>Reason for Closure (Optional)</label>
+            <input 
+              type="text" 
+              placeholder="e.g., National Holiday, Clinic Renovation" 
+              value={newExceptionReason} 
+              onChange={e => setNewExceptionReason(e.target.value)} 
+              style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #cbd5e1", outline: "none", fontSize: "14px" }}
+            />
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <button type="submit" className="btn-primary" style={{ padding: "10px 20px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>➕</span> Add Exception
+            </button>
+          </div>
+        </form>
+
+        {exceptions.length > 0 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" }}>
+            {exceptions.map(exc => (
+              <div key={exc.id} style={{ 
+                background: "#ffffff", 
+                border: "1px solid #e2e8f0", 
+                borderRadius: "12px", 
+                padding: "16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                boxShadow: "var(--shadow-sm)",
+                transition: "transform 0.2s"
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+              onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+              >
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                    <span style={{ fontWeight: "700", color: "var(--navy)", fontSize: "16px" }}>
+                      {new Date(exc.date).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    <span style={{ fontSize: "10px", fontWeight: "700", background: "var(--red-light)", color: "var(--red)", padding: "2px 6px", borderRadius: "10px", textTransform: "uppercase" }}>CLOSED</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "13px", color: "var(--gray)", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <span>📝</span> {exc.reason || "No reason provided"}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => handleDeleteException(exc.id)}
+                  style={{ 
+                    background: "var(--red-light)", 
+                    color: "var(--red)", 
+                    width: "36px", 
+                    height: "36px", 
+                    borderRadius: "50%", 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center", 
+                    border: "none", 
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                  title="Remove Exception"
+                  onMouseEnter={(e) => e.currentTarget.style.background = "#fee2e2"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "var(--red-light)"}
+                >
+                  ✖
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: "center", padding: "40px 20px", background: "#f8fafc", borderRadius: "12px", border: "1px dashed #cbd5e1" }}>
+            <span style={{ fontSize: "32px", display: "block", marginBottom: "12px", color: "#94a3b8" }}>📅</span>
+            <p style={{ fontSize: "15px", color: "var(--navy)", fontWeight: "600", margin: "0 0 4px 0" }}>No Exceptions Planned</p>
+            <p style={{ fontSize: "13px", color: "var(--gray)", margin: 0 }}>The clinic will operate on standard weekly hours.</p>
+          </div>
+        )}
       </div>
     </main>
   );

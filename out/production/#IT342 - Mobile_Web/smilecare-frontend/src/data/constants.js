@@ -7,9 +7,10 @@ export const PATIENT_NAV = [
 ];
 
 export const ADMIN_NAV = [
+  { id: "admin-appts",        label: "All Appointments",     icon: "📋" },
   { id: "admin-services",     label: "Manage Services",      icon: "🛠️" },
   { id: "admin-availability", label: "Clinic Availability",  icon: "📅" },
-  { id: "admin-appts",        label: "All Appointments",     icon: "📋" },
+  { id: "admin-clients",      label: "Registered Clients",   icon: "👥" },
 ];
 
 // ─── Demo users ──────────────────────────────────────────────────────────────

@@ -11,7 +11,9 @@ export default function BookingCalendar({
 }) {
   
   const today = new Date();
-  const maxDate = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000); // 60 days from now
+  // Allow admin to configure how many days in advance users can book (default 60)
+  const bookingWindowDays = parseInt(localStorage.getItem("bookingWindowDays") || "60", 10);
+  const maxDate = new Date(today.getTime() + bookingWindowDays * 24 * 60 * 60 * 1000); 
 
   /**
    * Convert military time (HH:MM) to 12-hour format with AM/PM
@@ -74,10 +76,14 @@ export default function BookingCalendar({
 
   const handlePrevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+    setSelectedDate(null);
+    setSelectedSlotId(null);
   };
 
   const handleNextMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+    setSelectedDate(null);
+    setSelectedSlotId(null);
   };
 
   const handleDateClick = (day) => {
@@ -147,34 +153,46 @@ export default function BookingCalendar({
       }}>
         <button
           onClick={handlePrevMonth}
+          className="btn-outline"
           style={{
-            background: "white",
-            border: "1px solid #ddd",
-            borderRadius: "6px",
-            padding: "8px 12px",
-            cursor: "pointer",
-            fontSize: "13px",
-            fontWeight: "600"
+            borderRadius: "50%",
+            width: "36px",
+            height: "36px",
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "18px",
+            border: "1px solid var(--mint)",
+            color: "var(--mint)",
+            background: "var(--mint-light)",
+            boxShadow: "var(--shadow-sm)"
           }}
         >
-          ← Prev
+          ←
         </button>
-        <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700" }}>
+        <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "var(--navy)" }}>
           {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
         </h3>
         <button
           onClick={handleNextMonth}
+          className="btn-outline"
           style={{
-            background: "white",
-            border: "1px solid #ddd",
-            borderRadius: "6px",
-            padding: "8px 12px",
-            cursor: "pointer",
-            fontSize: "13px",
-            fontWeight: "600"
+            borderRadius: "50%",
+            width: "36px",
+            height: "36px",
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "18px",
+            border: "1px solid var(--mint)",
+            color: "var(--mint)",
+            background: "var(--mint-light)",
+            boxShadow: "var(--shadow-sm)"
           }}
         >
-          Next →
+          →
         </button>
       </div>
 

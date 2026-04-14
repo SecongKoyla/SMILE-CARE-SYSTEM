@@ -1,6 +1,7 @@
 // pages/BookPage.jsx
 import { useState, useEffect, useRef } from "react";
 import { getAvailableTimeSlots, bookAppointment, getUserAppointments, getClinicHours } from "../api/api.js";
+import { getClinicExceptions } from "../api/exceptionsApi.js";
 import BookingCalendar from "../components/BookingCalendar.jsx";
 
 export default function BookPage({ services, user, setPage, onBook }) {
@@ -12,6 +13,7 @@ export default function BookPage({ services, user, setPage, onBook }) {
   const [error, setError] = useState(null);
   const [timeSlots, setTimeSlots] = useState([]);
   const [clinicHours, setClinicHours] = useState([]);
+  const [clinicExceptions, setClinicExceptions] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(null);
   
@@ -23,15 +25,22 @@ export default function BookPage({ services, user, setPage, onBook }) {
 
   // Fetch clinic hours on mount
   useEffect(() => {
-    const loadClinicHours = async () => {
+    const loadConfig = async () => {
       try {
-        const hours = await getClinicHours();
+        const [hours, exceptions] = await Promise.all([
+          getClinicHours(),
+          getClinicExceptions().catch(e => {
+            console.error("Non-fatal: Failed to load clinic exceptions", e);
+            return [];
+          })
+        ]);
         setClinicHours(hours || []);
+        setClinicExceptions(exceptions || []);
       } catch (err) {
-        console.error("Error loading clinic hours:", err);
+        console.error("Error loading calendar config:", err);
       }
     };
-    loadClinicHours();
+    loadConfig();
   }, []);
 
   // Fetch time slots when a service is selected
@@ -289,6 +298,7 @@ export default function BookPage({ services, user, setPage, onBook }) {
             selectedSlotId={selectedTimeSlotId}
             setSelectedSlotId={setSelectedTimeSlotId}
             clinicHours={clinicHours}
+            clinicExceptions={clinicExceptions}
           />
           <button 
             onClick={handleRefreshSlots} 

@@ -1,6 +1,7 @@
 // pages/AdminAvailabilityPage.jsx
 import { useState, useEffect } from "react";
 import { getClinicHours, updateClinicHours } from "../api/api.js";
+import { getClinicExceptions, addClinicException, deleteClinicException } from "../api/exceptionsApi.js";
 
 // Days of the week in calendar order (Sunday-Saturday)
 // But backend stores: 0=Monday, 1=Tuesday, ..., 5=Saturday, 6=Sunday
@@ -21,10 +22,51 @@ export default function AdminAvailabilityPage() {
   const [error, setError] = useState(null);
   const [editingDay, setEditingDay] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  
+  // Date Exceptions state
+  const [exceptions, setExceptions] = useState([]);
+  const [newExceptionDate, setNewExceptionDate] = useState("");
+  const [newExceptionReason, setNewExceptionReason] = useState("");
 
   useEffect(() => {
     fetchClinicHours();
+    fetchExceptions();
   }, []);
+
+  const fetchExceptions = async () => {
+    try {
+      const data = await getClinicExceptions();
+      setExceptions(data || []);
+    } catch (err) {
+      console.error("Error fetching exceptions:", err);
+    }
+  };
+
+  const handleAddException = async (e) => {
+    e.preventDefault();
+    if (!newExceptionDate) return;
+    try {
+      await addClinicException(newExceptionDate, newExceptionReason || "Closed");
+      setSuccessMsg(`Exception added for ${newExceptionDate}`);
+      setNewExceptionDate("");
+      setNewExceptionReason("");
+      fetchExceptions();
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err) {
+      setError("Failed to add exception. Date might already exist.");
+    }
+  };
+
+  const handleDeleteException = async (id) => {
+    try {
+      await deleteClinicException(id);
+      setSuccessMsg("Exception removed");
+      fetchExceptions();
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err) {
+      setError("Failed to delete exception");
+    }
+  };
 
   const fetchClinicHours = async () => {
     try {
@@ -96,6 +138,60 @@ export default function AdminAvailabilityPage() {
             />
           );
         })}
+      </div>
+
+      {/* Exceptions Section */}
+      <div style={{ marginTop: "32px", padding: "16px", backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #ddd" }}>
+        <h4 style={{ marginBottom: "12px", color: "var(--navy)" }}>Date-Specific Exceptions (Closed Days)</h4>
+        <p style={{ fontSize: "13px", color: "var(--gray)", marginBottom: "16px" }}>These dates override regular clinic hours and automatically mark the clinic as CLOSED.</p>
+        
+        <form onSubmit={handleAddException} style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+          <input 
+            type="date" 
+            value={newExceptionDate} 
+            onChange={e => setNewExceptionDate(e.target.value)} 
+            required 
+            style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+          />
+          <input 
+            type="text" 
+            placeholder="Reason (Optional)" 
+            value={newExceptionReason} 
+            onChange={e => setNewExceptionReason(e.target.value)} 
+            style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ccc", flex: 1 }}
+          />
+          <button type="submit" className="btn-primary" style={{ padding: "8px 16px" }}>+ Add Exception</button>
+        </form>
+
+        {exceptions.length > 0 ? (
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f9f9f9", textAlign: "left" }}>
+                <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Date</th>
+                <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Reason</th>
+                <th style={{ padding: "10px", borderBottom: "1px solid #ddd", width: "80px" }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {exceptions.map(exc => (
+                <tr key={exc.id}>
+                  <td style={{ padding: "10px", borderBottom: "1px solid #eee", fontWeight: "600" }}>{exc.date}</td>
+                  <td style={{ padding: "10px", borderBottom: "1px solid #eee", color: "var(--gray)" }}>{exc.reason}</td>
+                  <td style={{ padding: "10px", borderBottom: "1px solid #eee" }}>
+                    <button 
+                      onClick={() => handleDeleteException(exc.id)}
+                      style={{ color: "#c00", cursor: "pointer", background: "none", border: "none" }}
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ fontSize: "13px", color: "#999", fontStyle: "italic" }}>No exceptions planned.</p>
+        )}
       </div>
     </main>
   );

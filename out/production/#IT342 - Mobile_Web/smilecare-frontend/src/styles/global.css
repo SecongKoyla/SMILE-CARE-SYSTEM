@@ -284,7 +284,9 @@ ul { list-style: none; }
   font-weight: 700;
 }
 .badge-confirmed { background: var(--green-bg); color: var(--green-txt); }
+.badge-approved  { background: var(--green-bg); color: var(--green-txt); }
 .badge-pending   { background: var(--yellow-bg); color: var(--yellow-txt); }
+.badge-completed { background: #e0f2fe; color: #0284c7; }
 .badge-cancelled { background: var(--red-bg);    color: var(--red-txt); }
 .badge-admin     { background: var(--admin-light); color: var(--admin); }
 
