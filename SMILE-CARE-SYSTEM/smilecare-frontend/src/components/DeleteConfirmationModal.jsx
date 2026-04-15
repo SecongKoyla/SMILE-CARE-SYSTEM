@@ -9,6 +9,10 @@ import "../styles/deleteConfirmationModal.css";
 function formatTime(timeString) {
   if (!timeString) return timeString;
   
+  if (/AM|PM/i.test(timeString)) return timeString;
+
+  if (/AM|PM/i.test(timeString)) return timeString;
+
   // Handle both "14:30" and "14:30:00" formats
   const timeParts = timeString.split(':');
   let hours = parseInt(timeParts[0]);
