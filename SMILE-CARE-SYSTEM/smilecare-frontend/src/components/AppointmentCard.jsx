@@ -8,6 +8,11 @@
  */
 function formatTime(timeString) {
   if (!timeString) return timeString;
+
+  // If the time string already contains AM or PM, assume it's already formatted
+  if (/AM|PM/i.test(timeString)) {
+    return timeString;
+  }
   
   // Handle both "14:30" and "14:30:00" formats
   const timeParts = timeString.split(':');
