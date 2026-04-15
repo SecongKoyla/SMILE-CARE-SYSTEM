@@ -5,6 +5,7 @@ import { getUserAppointments } from "../api/api.js";
 export default function HomePage({ user, appointments, setPage }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [localAppointments, setLocalAppointments] = useState(appointments || []);
+  const [clearedNotifyIds, setClearedNotifyIds] = useState([]);
 
   useEffect(() => {
     if (user?.id) {
@@ -19,13 +20,20 @@ export default function HomePage({ user, appointments, setPage }) {
           const transformed = data.map(appt => {
             const dateObj = new Date(appt.timeSlot.date);
             // Default 00:00:00 to avoid invalid formats if time is just "10:00 AM"
-            const timeParts = appt.timeSlot.startTime.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+            const timeParts = appt.timeSlot.startTime.match(/(\d+):(\d+)(?::\d+)?\s*(AM|PM)?/i);
             let hours = 0, mins = 0;
+            let formattedTime = appt.timeSlot.startTime;
             if (timeParts) {
               hours = parseInt(timeParts[1], 10);
               mins = parseInt(timeParts[2], 10);
               if (timeParts[3] && timeParts[3].toUpperCase() === 'PM' && hours < 12) hours += 12;
               if (timeParts[3] && timeParts[3].toUpperCase() === 'AM' && hours === 12) hours = 0;
+              
+              // Format as 12-hour AM/PM
+              let displayHours = hours % 12 || 12;
+              let displayMins = mins.toString().padStart(2, '0');
+              let ampm = hours >= 12 ? 'PM' : 'AM';
+              formattedTime = `${displayHours.toString().padStart(2, '0')}:${displayMins} ${ampm}`;
             }
             dateObj.setHours(hours, mins, 0, 0);
 
@@ -35,7 +43,7 @@ export default function HomePage({ user, appointments, setPage }) {
               month: new Date(appt.timeSlot.date).toLocaleString('default', { month: 'short' }),
               timestamp: dateObj.getTime(), // Used for numeric sorting
               type: appt.service.name,
-              time: appt.timeSlot.startTime,
+              time: formattedTime,
               status: statusMap[appt.status] || appt.status.toLowerCase(),
               patient: user.name
             };
@@ -55,7 +63,7 @@ export default function HomePage({ user, appointments, setPage }) {
 
   // Generate notifications based on appointment data
   const notifications = [...localAppointments]
-    .filter(a => a.status === "cancelled" || a.status === "approved" || a.status === "completed")
+    .filter(a => (a.status === "cancelled" || a.status === "approved" || a.status === "completed") && !clearedNotifyIds.includes(a.id))
     .sort((a, b) => b.id - a.id) // Simplistic chronological using IDs if higher ID means newer, or use another metric
     .slice(0, 5) // Take 5 most recent
     .map(a => ({
@@ -253,8 +261,21 @@ export default function HomePage({ user, appointments, setPage }) {
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 16, flexShrink: 0,
                     boxShadow: "0 1px 6px rgba(30,60,80,0.06)",
+                    position: "relative"
                   }}>
                     🔔
+                    {notifications.length > 0 && (
+                      <div style={{
+                        position: "absolute",
+                        top: 6,
+                        right: 6,
+                        width: 8,
+                        height: 8,
+                        background: "var(--coral, #ff6b6b)",
+                        borderRadius: "50%",
+                        border: "2px solid var(--white)"
+                      }} />
+                    )}
                   </div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--navy)" }}>Notifications</div>
@@ -280,8 +301,33 @@ export default function HomePage({ user, appointments, setPage }) {
                         maxHeight: 300,
                         overflowY: "auto"
                     }}>
-                        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontWeight: "bold", fontSize: 14, color: "var(--navy)" }}>
-                            Recent Activity
+                        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontWeight: "bold", fontSize: 14, color: "var(--navy)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span>Recent Activity</span>
+                            {notifications.length > 0 && (
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setClearedNotifyIds([...clearedNotifyIds, ...notifications.map(n => n.id)]);
+                                    }}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        fontSize: 16,
+                                        color: "var(--gray)",
+                                        padding: 4,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        transition: "color 0.2s"
+                                    }}
+                                    title="Clear all notifications"
+                                    onMouseEnter={e => e.currentTarget.style.color = "var(--coral, #ff6b6b)"}
+                                    onMouseLeave={e => e.currentTarget.style.color = "var(--gray)"}
+                                >
+                                    🗑️
+                                </button>
+                            )}
                         </div>
                         {notifications.length === 0 ? (
                             <div style={{ padding: 24, textAlign: "center", color: "var(--gray)", fontSize: 13 }}>
