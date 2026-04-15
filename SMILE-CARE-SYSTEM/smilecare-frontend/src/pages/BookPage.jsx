@@ -207,6 +207,32 @@ export default function BookPage({ services, user, setPage, onBook }) {
   };
 
   if (confirmed) {
+    const bookedSlot = timeSlots.find(t => t.id === selectedTimeSlotId);
+    let displayTime = bookedSlot?.startTime || "";
+    let displayDate = "";
+    
+    if (bookedSlot?.date) {
+      // Avoid timezone shifting issues by parsing YYYY-MM-DD directly
+      const [year, month, day] = bookedSlot.date.split('-');
+      const localDate = new Date(year, month - 1, day);
+      displayDate = localDate.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    if (displayTime) {
+      const timeParts = displayTime.match(/(\d+):(\d+)(?::\d+)?\s*(AM|PM)?/i);
+      if (timeParts) {
+        let hours = parseInt(timeParts[1], 10);
+        let mins = parseInt(timeParts[2], 10);
+        if (timeParts[3] && timeParts[3].toUpperCase() === 'PM' && hours < 12) hours += 12;
+        if (timeParts[3] && timeParts[3].toUpperCase() === 'AM' && hours === 12) hours = 0;
+        
+        let displayHours = hours % 12 || 12;
+        let displayMins = mins.toString().padStart(2, '0');
+        let ampm = hours >= 12 ? 'PM' : 'AM';
+        displayTime = `${displayHours.toString().padStart(2, '0')}:${displayMins} ${ampm}`;
+      }
+    }
+
     return (
       <main className="sc-main page-enter">
         <div className="card">
@@ -215,8 +241,8 @@ export default function BookPage({ services, user, setPage, onBook }) {
             <h2>Appointment Booked!</h2>
             <p>
               Your <strong>{services[selectedIdx]?.name}</strong> is scheduled at{" "}
-              <strong>{timeSlots.find(t => t.id === selectedTimeSlotId)?.startTime}</strong> on{" "}
-              <strong>{new Date(timeSlots.find(t => t.id === selectedTimeSlotId)?.date).toLocaleDateString()}</strong>.<br />
+              <strong>{displayTime}</strong> on{" "}
+              <strong>{displayDate}</strong>.<br />
               We'll send you a reminder before your visit.
             </p>
             <button className="btn-primary" onClick={() => setPage("appointments")}>
