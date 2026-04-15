@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Playfair+Display:ital,wght@0,500;0,700;1,400&display=swap');
+
+:root {
+  /* Brand */
+  --mint:        #4ECBA6;
+  --mint-light:  #E8F8F3;
+  --mint-mid:    #C2EEE0;
+  --mint-dark:   #3ab893;
+
+  /* Neutrals */
+  --navy:        #1A2E3B;
+  --navy-mid:    #234358;
+  --gray:        #6B7A85;
+  --gray-light:  #F4F7F9;
+  --gray-border: #EDF0F2;
+  --white:       #FFFFFF;
+
+  /* Status */
+  --green-bg:  #E8F8F3;
+  --green-txt: #3ab893;
+  --yellow-bg: #FFF8E8;
+  --yellow-txt:#C99A1A;
+  --red-bg:    #FDECEA;
+  --red-txt:   #D9534F;
+
+  /* Admin accent */
+  --admin:       #5B6EF5;
+  --admin-light: #ECEFFE;
+
+  /* Elevation */
+  --shadow-sm:   0 2px 12px rgba(30,60,80,0.06);
+  --shadow:      0 2px 20px rgba(30,60,80,0.08);
+  --shadow-hover:0 6px 32px rgba(30,60,80,0.13);
+
+  /* Shape */
+  --radius:    14px;
+  --radius-sm: 10px;
+  --radius-xs: 8px;
+}
