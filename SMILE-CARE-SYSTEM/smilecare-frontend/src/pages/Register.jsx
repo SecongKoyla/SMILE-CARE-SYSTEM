@@ -212,13 +212,14 @@ import { register } from "../api/api";
 
 export default function Register({ onRegister, onSwitchToLogin }) {
 
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const filled = [fullName, email, password, confirmPassword].filter(Boolean).length;
+  const filled = [firstName, lastName, email, password, confirmPassword].filter(Boolean).length;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -230,10 +231,8 @@ export default function Register({ onRegister, onSwitchToLogin }) {
     }
 
     try {
-      const res = await register(fullName, email, password, confirmPassword);
-
+      const res = await register(firstName, lastName, email, password, confirmPassword);
       onRegister(res?.user ?? res);
-
     } catch (err) {
       setError(err.message);
     }
@@ -283,26 +282,39 @@ export default function Register({ onRegister, onSwitchToLogin }) {
 
             <form onSubmit={handleSubmit}>
 
-              <div className="sc-field">
-                <label>Full Name</label>
-                <input
-                    type="text"
-                    placeholder="Jane Smith"
-                    value={fullName}
-                    onChange={(e)=>setFullName(e.target.value)}
-                    autoComplete="name"
-                    required
-                />
+              <div className="sc-field" style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <label>First Name</label>
+                  <input
+                      type="text"
+                      placeholder="Jane"
+                      value={firstName}
+                      onChange={(e)=>setFirstName(e.target.value)}
+                      autoComplete="given-name"
+                      required
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Last Name</label>
+                  <input
+                      type="text"
+                      placeholder="Smith"
+                      value={lastName}
+                      onChange={(e)=>setLastName(e.target.value)}
+                      autoComplete="family-name"
+                      required
+                  />
+                </div>
               </div>
 
               <div className="sc-field">
                 <label>Email</label>
                 <input
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="e.g. jane.smith@example.com"
                     value={email}
                     onChange={(e)=>setEmail(e.target.value)}
-                    autoComplete="email"
+                    autoComplete="off"
                     required
                 />
               </div>

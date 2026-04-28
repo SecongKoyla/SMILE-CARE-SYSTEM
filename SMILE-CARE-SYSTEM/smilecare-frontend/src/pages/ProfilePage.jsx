@@ -5,7 +5,13 @@ import "../styles/profile.css";
 
 export default function ProfilePage({ user, setUser, onBack, initialTab = "info" }) {
 
-    const displayName = (user?.name ?? user?.fullName ?? "").trim() || "User";
+    const displayName = (user?.firstName && user?.lastName) 
+        ? `${user.firstName} ${user.lastName}` 
+        : (user?.name ?? user?.fullName ?? "").trim() || "User";
+
+    const nameParts = displayName.split(/\s+/);
+    const initialFirstName = user?.firstName || (nameParts.length > 0 ? nameParts[0] : "");
+    const initialLastName = user?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(" ") : "");
     const isAdmin = String(user?.role ?? "PATIENT").toUpperCase() === "ADMIN";
 
     // ── Section tabs ──────────────────────────────────────────────
@@ -19,7 +25,8 @@ export default function ProfilePage({ user, setUser, onBack, initialTab = "info"
 
     // ── Edit Profile state ────────────────────────────────────────
     const [profileForm, setProfileForm] = useState({
-        fullName: displayName,
+        firstName: initialFirstName,
+        lastName: initialLastName,
     });
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileMsg, setProfileMsg]   = useState(null); // { type: "success"|"error", text }
@@ -61,28 +68,33 @@ export default function ProfilePage({ user, setUser, onBack, initialTab = "info"
         e.preventDefault();
         setProfileMsg(null);
 
-        if (!profileForm.fullName.trim()) {
-            setProfileMsg({ type: "error", text: "Full name is required." });
+        const fName = profileForm.firstName || "";
+        const lName = profileForm.lastName || "";
+
+        if (!fName.trim() || !lName.trim()) {
+            setProfileMsg({ type: "error", text: "First name and Last name are required." });
             return;
         }
 
-        const normalizedFullName = profileForm.fullName.trim().replace(/\s+/g, " ");
+        const normalizedFirstName = fName.trim().replace(/\s+/g, " ");
+        const normalizedLastName = lName.trim().replace(/\s+/g, " ");
         const fullNamePattern = /^[\p{L}\s]+$/u;
 
-        if (!fullNamePattern.test(normalizedFullName)) {
-            setProfileMsg({ type: "error", text: "Full name can only contain letters and spaces." });
+        if (!fullNamePattern.test(normalizedFirstName) || !fullNamePattern.test(normalizedLastName)) {
+            setProfileMsg({ type: "error", text: "Name can only contain letters and spaces." });
             return;
         }
 
         setProfileLoading(true);
         try {
-            const res = await fetch(`${API_URL}/users/${user.id}`, {
+            const res = await fetch(`${API_URL}/users/${user.id}/profile`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    fullName: normalizedFullName,
+                    firstName: normalizedFirstName,
+                    lastName: normalizedLastName,
                 }),
             });
 
@@ -311,15 +323,27 @@ export default function ProfilePage({ user, setUser, onBack, initialTab = "info"
                             )}
 
                             <form className="profile-form" onSubmit={handleProfileSave}>
-                                <div className="form-group">
-                                    <label className="form-label">Full Name</label>
-                                    <input
-                                        className="form-input"
-                                        type="text"
-                                        value={profileForm.fullName}
-                                        onChange={(e) => setProfileForm((p) => ({ ...p, fullName: e.target.value }))}
-                                        placeholder="Your full name"
-                                    />
+                                <div style={{ display: 'flex', gap: '16px' }}>
+                                    <div className="form-group" style={{ flex: 1 }}>
+                                        <label className="form-label">First Name</label>
+                                        <input
+                                            className="form-input"
+                                            type="text"
+                                            value={profileForm.firstName}
+                                            onChange={(e) => setProfileForm((p) => ({ ...p, firstName: e.target.value }))}
+                                            placeholder="First Name"
+                                        />
+                                    </div>
+                                    <div className="form-group" style={{ flex: 1 }}>
+                                        <label className="form-label">Last Name</label>
+                                        <input
+                                            className="form-input"
+                                            type="text"
+                                            value={profileForm.lastName}
+                                            onChange={(e) => setProfileForm((p) => ({ ...p, lastName: e.target.value }))}
+                                            placeholder="Last Name"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="form-group">

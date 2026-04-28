@@ -70,7 +70,7 @@ public class AppointmentService {
 
         User patient = userRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
-        logger.info("   ✓ Patient found: " + patient.getFullName());
+        logger.info("   ✓ Patient found: " + patient.getFirstName() + " " + patient.getLastName());
 
         DentalService service = dentalServiceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new RuntimeException("Service not found"));
@@ -208,7 +208,7 @@ public class AppointmentService {
                         return new RuntimeException(errorMsg);
                     });
 
-            logger.info("✅ [Service] Appointment found - Patient: " + appointment.getPatient().getFullName() + 
+            logger.info("✅ [Service] Appointment found - Patient: " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName() + 
                        ", Service: " + appointment.getService().getName());
 
             // 🔵 Free the time slot first (if not already booked by someone else)
@@ -305,7 +305,8 @@ public class AppointmentService {
         if (appointment.getPatient() != null) {
             patientDTO = new AppointmentResponseDTO.UserDTO(
                 appointment.getPatient().getId(),
-                appointment.getPatient().getFullName(),
+                appointment.getPatient().getFirstName(),
+                appointment.getPatient().getLastName(),
                 appointment.getPatient().getEmail(),
                 appointment.getPatient().getRole().name()
             );
@@ -315,7 +316,8 @@ public class AppointmentService {
         if (appointment.getProcessedByAdmin() != null) {
             adminDTO = new AppointmentResponseDTO.UserDTO(
                 appointment.getProcessedByAdmin().getId(),
-                appointment.getProcessedByAdmin().getFullName(),
+                appointment.getProcessedByAdmin().getFirstName(),
+                appointment.getProcessedByAdmin().getLastName(),
                 appointment.getProcessedByAdmin().getEmail(),
                 appointment.getProcessedByAdmin().getRole().name()
             );

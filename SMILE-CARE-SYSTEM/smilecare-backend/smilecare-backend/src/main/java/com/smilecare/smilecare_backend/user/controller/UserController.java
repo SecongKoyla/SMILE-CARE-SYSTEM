@@ -25,7 +25,8 @@ public class UserController {
     private Map<String, Object> toSafeUser(User user) {
         Map<String, Object> safeUser = new LinkedHashMap<>();
         safeUser.put("id", user.getId());
-        safeUser.put("fullName", user.getFullName());
+        safeUser.put("firstName", user.getFirstName());
+        safeUser.put("lastName", user.getLastName());
         safeUser.put("email", user.getEmail());
         safeUser.put("role", user.getRole() == null ? "PATIENT" : user.getRole().name());
 
@@ -53,9 +54,16 @@ public class UserController {
     @PutMapping("/{id}/profile")
     public ResponseEntity<?> updateProfile(
             @PathVariable Long id,
-            @RequestParam String fullName) {
+            @RequestBody java.util.Map<String, String> payload) {
         try {
-            User updated = userService.updateProfile(id, fullName);
+            String firstName = payload.get("firstName");
+            String lastName = payload.get("lastName");
+            
+            if (firstName == null || lastName == null) {
+                throw new RuntimeException("First name and Last name are required");
+            }
+
+            User updated = userService.updateProfile(id, firstName, lastName);
             return ResponseEntity.ok(toSafeUser(updated));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

@@ -59,7 +59,8 @@ public class AuthService {
 
         UserResponse userResponse = new UserResponse(
                 user.getId(),
-                user.getFullName(),
+                user.getFirstName(),
+                user.getLastName(),
                 user.getEmail(),
                 user.getRole(),
                 user.getProfilePhoto()
@@ -78,13 +79,18 @@ public class AuthService {
             throw new RuntimeException("Registration request is missing");
         }
 
-        String fullName = request.getFullName();
+        String firstName = request.getFirstName();
+        String lastName = request.getLastName();
         String email = request.getEmail();
         String password = request.getPassword();
         String confirmPassword = request.getConfirmPassword();
 
-        if (fullName == null || fullName.trim().isEmpty()) {
-            throw new RuntimeException("Full name is required");
+        if (firstName == null || firstName.trim().isEmpty()) {
+            throw new RuntimeException("First name is required");
+        }
+
+        if (lastName == null || lastName.trim().isEmpty()) {
+            throw new RuntimeException("Last name is required");
         }
 
         if (email == null || email.trim().isEmpty()) {
@@ -114,7 +120,8 @@ public class AuthService {
         }
 
         User newUser = new User();
-        newUser.setFullName(fullName.trim());
+        newUser.setFirstName(firstName.trim());
+        newUser.setLastName(lastName.trim());
         newUser.setEmail(email);
         newUser.setPasswordHash(passwordEncoder.encode(password));
         newUser.setRole(Role.PATIENT);
@@ -123,7 +130,8 @@ public class AuthService {
 
         UserResponse userResponse = new UserResponse(
                 newUser.getId(),
-                newUser.getFullName(),
+                newUser.getFirstName(),
+                newUser.getLastName(),
                 newUser.getEmail(),
                 newUser.getRole(),
                 newUser.getProfilePhoto()
