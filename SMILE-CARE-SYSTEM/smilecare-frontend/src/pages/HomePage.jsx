@@ -72,7 +72,9 @@ export default function HomePage({ user, appointments, setPage }) {
     }
   }, [user]);
 
-  const displayName = (user?.name ?? user?.fullName ?? " ").trim();
+  const displayName = (user?.firstName && user?.lastName) 
+      ? `${user.firstName} ${user.lastName}` 
+      : (user?.name ?? user?.fullName ?? "").trim();
   const firstName = displayName ? displayName.split(/\s+/)[0] : "User";
 
   const upcoming = [...localAppointments]

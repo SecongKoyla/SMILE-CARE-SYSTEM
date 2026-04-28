@@ -19,8 +19,11 @@ public class User {
     @JsonIgnore
     private String passwordHash;
 
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
+    @Column(name = "first_name", nullable = false)
+    private String firstName;
+
+    @Column(name = "last_name", nullable = false)
+    private String lastName;
 
     @Column(name = "profile_photo", columnDefinition = "BYTEA")
     @JsonIgnore
@@ -50,8 +53,11 @@ public class User {
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
 
     public byte[] getProfilePhoto() { return profilePhoto; }
     public void setProfilePhoto(byte[] profilePhoto) { this.profilePhoto = profilePhoto; }

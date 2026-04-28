@@ -30,17 +30,19 @@ public class UserService {
         return userRepository.findById(id); 
     }
 
-    public User updateProfile(Long id, String fullName) {
+    public User updateProfile(Long id, String firstName, String lastName) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        if (fullName == null || fullName.trim().isEmpty()) {
-            throw new RuntimeException("Full name is required");
+        if (firstName == null || firstName.trim().isEmpty() || lastName == null || lastName.trim().isEmpty()) {
+            throw new RuntimeException("First name and Last name are required");
         }
-        String normalizedName = fullName.trim().replaceAll("\\s+", " ");
-        if (!NAME_PATTERN.matcher(normalizedName).matches()) {
-            throw new RuntimeException("Full name can only contain letters and spaces");
+        String normalizedFirst = firstName.trim().replaceAll("\\s+", " ");
+        String normalizedLast = lastName.trim().replaceAll("\\s+", " ");
+        if (!NAME_PATTERN.matcher(normalizedFirst).matches() || !NAME_PATTERN.matcher(normalizedLast).matches()) {
+            throw new RuntimeException("Names can only contain letters and spaces");
         }
-        user.setFullName(normalizedName);
+        user.setFirstName(normalizedFirst);
+        user.setLastName(normalizedLast);
         return userRepository.save(user);
     }
 
