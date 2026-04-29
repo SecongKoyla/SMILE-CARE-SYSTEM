@@ -163,10 +163,57 @@ export default function App() {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
     localStorage.removeItem("user");
+    localStorage.removeItem("lastActivity");
 
     setPage("home");
   };
+
+  // ─────────────────────────────────────────────
+  // AUTO LOGOUT ON INACTIVITY
+  // ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+
+    const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+    
+    const checkActivity = () => {
+      const lastActivityStr = localStorage.getItem("lastActivity");
+      if (lastActivityStr) {
+        const lastActivity = parseInt(lastActivityStr, 10);
+        if (Date.now() - lastActivity > INACTIVITY_LIMIT_MS) {
+          handleLogout();
+          return true; // was logged out
+        }
+      }
+      return false;
+    };
+
+    // Check on initial mount or when user changes
+    if (checkActivity()) return;
+    
+    const updateActivity = () => {
+      localStorage.setItem("lastActivity", Date.now().toString());
+    };
+    
+    // Set initial timestamp
+    updateActivity();
+
+    // Check interval every minute to log out if inactive while open
+    const interval = setInterval(() => {
+      checkActivity();
+    }, 60000);
+
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(e => window.addEventListener(e, updateActivity, { passive: true }));
+
+    return () => {
+      clearInterval(interval);
+      events.forEach(e => window.removeEventListener(e, updateActivity));
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleOpenProfileTab = (tab = "info") => {
     setProfileTab(tab);
