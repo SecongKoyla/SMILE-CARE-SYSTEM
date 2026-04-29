@@ -5,6 +5,25 @@ import AppointmentCard from "../components/AppointmentCard.jsx";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.jsx";
 import { getAllAppointments, updateAppointmentStatus, deleteAppointment } from "../api/api.js";
 
+// Helper function to format military time to 12-hour format
+function formatTime12Hour(timeString) {
+  if (!timeString) return timeString;
+  if (/AM|PM/i.test(timeString)) return timeString; // Already formatted
+
+  const timeParts = timeString.split(':');
+  if (timeParts.length >= 2) {
+    let hours = parseInt(timeParts[0], 10);
+    const minutes = timeParts[1];
+    const isAM = hours < 12;
+    
+    if (hours === 0) hours = 12;
+    if (hours > 12) hours -= 12;
+    
+    return `${hours}:${minutes} ${isAM ? 'AM' : 'PM'}`;
+  }
+  return timeString;
+}
+
 const FILTERS = ["all", "approved", "pending", "completed", "cancelled"];
 
 export default function AdminApptsPage() {
@@ -131,7 +150,7 @@ export default function AdminApptsPage() {
         patientName: originalAppt.patient.fullName,
         serviceType: originalAppt.service.name,
         date: formattedDate,
-        time: originalAppt.timeSlot.startTime,
+        time: formatTime12Hour(originalAppt.timeSlot.startTime),
       },
       isDeleting: false,
       deleteError: null,
@@ -239,7 +258,7 @@ export default function AdminApptsPage() {
       day: d.getDate().toString().padStart(2, '0'),
       month: d.toLocaleString('default', { month: 'short' }),
       type: appt.service.name,
-      time: appt.timeSlot.startTime,
+      time: formatTime12Hour(appt.timeSlot.startTime),
       status: statusMap[appt.status] || appt.status.toLowerCase(),
       originalStatus: appt.status,
       patient: appt.patient.fullName,

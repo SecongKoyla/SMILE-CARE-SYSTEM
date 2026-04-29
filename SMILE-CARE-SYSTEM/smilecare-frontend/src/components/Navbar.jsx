@@ -8,7 +8,9 @@ export default function Navbar({ currentPage, setPage, user, onLogout, onOpenPro
   const [menuOpen, setMenuOpen] = useState(false);
 
   const role = String(user?.role ?? "PATIENT").toUpperCase();
-  const displayName = (user?.name ?? user?.fullName ?? "").trim() || "User";
+  const displayName = (user?.firstName && user?.lastName) 
+      ? `${user.firstName} ${user.lastName}`
+      : (user?.name ?? user?.fullName ?? "").trim() || "User";
 
   const navItems = role === "ADMIN" ? ADMIN_NAV : PATIENT_NAV;
   const isAdmin = role === "ADMIN";

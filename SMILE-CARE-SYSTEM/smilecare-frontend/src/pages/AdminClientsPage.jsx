@@ -33,8 +33,8 @@ export default function AdminClientsPage() {
   };
 
   const filteredClients = clients.filter(c => 
-    c.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    c.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (c.fullName && c.fullName.toLowerCase().includes(searchTerm.toLowerCase())) || 
+    (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (loading) {

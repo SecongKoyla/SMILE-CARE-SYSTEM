@@ -248,10 +248,10 @@ export default function Login({ onLogin, onSwitchToRegister }) {
               <label>Email</label>
               <input
                 type="email"
-                placeholder="you@example.com"
+                placeholder="Email Address"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                autoComplete="email"
+                autoComplete="off"
                 required
               />
             </div>
@@ -259,10 +259,10 @@ export default function Login({ onLogin, onSwitchToRegister }) {
               <label>Password</label>
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                autoComplete="current-password"
+                autoComplete="new-password"
                 required
               />
             </div>

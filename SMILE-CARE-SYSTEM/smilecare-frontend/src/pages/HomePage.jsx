@@ -5,7 +5,25 @@ import { getUserAppointments } from "../api/api.js";
 export default function HomePage({ user, appointments, setPage }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [localAppointments, setLocalAppointments] = useState(appointments || []);
-  const [clearedNotifyIds, setClearedNotifyIds] = useState([]);
+  const [clearedNotifyIds, setClearedNotifyIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`cleared_notifications_${user?.id || 'guest'}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const handleClearNotifications = (e) => {
+    e.stopPropagation();
+    const newCleared = [...clearedNotifyIds, ...notifications.map(n => n.id)];
+    setClearedNotifyIds(newCleared);
+    try {
+      localStorage.setItem(`cleared_notifications_${user?.id || 'guest'}`, JSON.stringify(newCleared));
+    } catch (err) {
+      console.error("Failed to save cleared notifications:", err);
+    }
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -54,7 +72,9 @@ export default function HomePage({ user, appointments, setPage }) {
     }
   }, [user]);
 
-  const displayName = (user?.name ?? user?.fullName ?? " ").trim();
+  const displayName = (user?.firstName && user?.lastName) 
+      ? `${user.firstName} ${user.lastName}` 
+      : (user?.name ?? user?.fullName ?? "").trim();
   const firstName = displayName ? displayName.split(/\s+/)[0] : "User";
 
   const upcoming = [...localAppointments]
@@ -305,10 +325,7 @@ export default function HomePage({ user, appointments, setPage }) {
                             <span>Recent Activity</span>
                             {notifications.length > 0 && (
                                 <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setClearedNotifyIds([...clearedNotifyIds, ...notifications.map(n => n.id)]);
-                                    }}
+                                    onClick={handleClearNotifications}
                                     style={{
                                         background: "none",
                                         border: "none",

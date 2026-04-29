@@ -76,18 +76,20 @@ export async function login(email, password) {
 /**
  * Register a new user
  * @param {string} email
- * @param {string} fullName
+ * @param {string} firstName
+ * @param {string} lastName
  * @param {string} password
  * @returns {Promise<Object>} new user data
  * @throws {Error} with backend error message if registration fails
  */
-export async function register(fullName, email, password, confirmPassword) {
+export async function register(firstName, lastName, email, password, confirmPassword) {
   try {
     const response = await fetch("http://localhost:8085/api/v1/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        fullName,
+        firstName,
+        lastName,
         email,
         password,
         confirmPassword // ✅ send to backend

@@ -4,6 +4,25 @@ import AppointmentCard from "../components/AppointmentCard.jsx";
 import Modal from "../components/Modal.jsx";
 import { getUserAppointments, updateAppointmentStatus } from "../api/api.js";
 
+// Helper function to format military time to 12-hour format
+function formatTime12Hour(timeString) {
+  if (!timeString) return timeString;
+  if (/AM|PM/i.test(timeString)) return timeString; // Already formatted
+
+  const timeParts = timeString.split(':');
+  if (timeParts.length >= 2) {
+    let hours = parseInt(timeParts[0], 10);
+    const minutes = timeParts[1];
+    const isAM = hours < 12;
+    
+    if (hours === 0) hours = 12;
+    if (hours > 12) hours -= 12;
+    
+    return `${hours}:${minutes} ${isAM ? 'AM' : 'PM'}`;
+  }
+  return timeString;
+}
+
 const FILTERS = ["all", "approved", "pending", "completed", "cancelled"];
 
 export default function AppointmentsPage({ user, setPage }) {
@@ -163,26 +182,54 @@ export default function AppointmentsPage({ user, setPage }) {
               Are you sure you want to cancel your upcoming appointment?
             </p>
             
-            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-                {cancelTarget.type}
+            <div style={{
+              background: 'white',
+              padding: '16px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.02)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px'
+            }}>
+              <div style={{
+                background: 'var(--mint-light, #e0f2fe)',
+                color: 'var(--mint, #0ea5e9)',
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                flexShrink: 0
+              }}>
+                📅
               </div>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>
-                Date: {cancelTarget.month} {cancelTarget.day} at {cancelTarget.time}
+              <div>
+                <div style={{ fontWeight: '700', color: 'var(--navy, #1e293b)', fontSize: '15px', marginBottom: '4px' }}>
+                  {cancelTarget.type}
+                </div>
+                <div style={{ fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>{cancelTarget.month} {cancelTarget.day}</span>
+                  <span style={{ fontSize: '16px', color: '#cbd5e1' }}>•</span>
+                  <span style={{ fontWeight: '600', color: 'var(--navy, #1e293b)' }}>{formatTime12Hour(cancelTarget.time)}</span>
+                </div>
               </div>
             </div>
 
-            <div className="modal-actions" style={{ marginTop: '8px' }}>
+            <div className="modal-actions" style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
               <button 
                 className="btn-outline" 
                 onClick={() => setCancelTarget(null)}
                 disabled={cancelLoading}
+                style={{ flex: 1, padding: '12px', fontSize: '14px' }}
               >
                 No, Keep It
               </button>
               <button 
                 className="btn-primary" 
-                style={{ background: '#ef4444', borderColor: '#ef4444' }}
+                style={{ flex: 1, padding: '12px', fontSize: '14px', background: '#ef4444', borderColor: '#ef4444', color: 'white', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }}
                 onClick={confirmCancel}
                 disabled={cancelLoading}
               >

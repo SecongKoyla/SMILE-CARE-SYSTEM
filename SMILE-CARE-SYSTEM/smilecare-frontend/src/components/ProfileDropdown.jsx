@@ -23,7 +23,9 @@ export default function ProfileDropdown({ user, onNavigateProfile, isAdmin }) {
         return parts[parts.length - 1].charAt(0).toUpperCase();
     };
 
-    const displayName = (user?.name ?? user?.fullName ?? "").trim() || "User";
+    const displayName = (user?.firstName && user?.lastName) 
+        ? `${user.firstName} ${user.lastName}`
+        : (user?.name ?? user?.fullName ?? "").trim() || "User";
     const email = user?.email ?? "";
 
     const handleNavigate = (tab) => {
