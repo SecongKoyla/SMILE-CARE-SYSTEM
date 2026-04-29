@@ -29,6 +29,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(authz -> authz
+                        // Allow all preflight OPTIONS requests
+                        .requestMatchers(request -> "OPTIONS".equals(request.getMethod())).permitAll()
                         .anyRequest().permitAll()
                 )
                 .httpBasic(basic -> basic.disable())
@@ -41,7 +43,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Use allowedOriginPatterns for deployed frontend URLs
+        // Allowed origins: use patterns to match https URLs correctly
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
@@ -49,13 +51,13 @@ public class SecurityConfig {
                 "https://smile-care-system.onrender.com"
         ));
 
-        // Allow all HTTP methods
-        config.setAllowedMethods(List.of("*"));
+        // Allow all methods including OPTIONS
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         // Allow all headers
         config.setAllowedHeaders(List.of("*"));
         // Allow credentials (cookies, auth headers)
         config.setAllowCredentials(true);
-        // Cache preflight requests for 1 day
+        // Cache preflight for 1 day
         config.setMaxAge(86400L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
