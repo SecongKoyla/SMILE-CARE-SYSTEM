@@ -296,7 +296,7 @@ export default function AdminApptsPage() {
             {error}
           </p>
           <p style={{ color: "var(--gray)", fontSize: "13px", marginBottom: "20px" }}>
-            Make sure the backend server is running on http://localhost:8085
+            Make sure the backend server is running and accessible.
           </p>
           <button 
             className="btn-primary"

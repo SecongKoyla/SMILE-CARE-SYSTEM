@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8085/api/v1";
+export const API_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/v1` : "http://localhost:8085/api/v1";
 
 /**
  * Get authorization headers if token exists
