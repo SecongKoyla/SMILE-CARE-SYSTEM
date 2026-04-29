@@ -1,4 +1,4 @@
-export const API_URL = "http://localhost:8085/api/v1";
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8085/api/v1";
 
 /**
  * Get authorization headers if token exists
@@ -84,7 +84,7 @@ export async function login(email, password) {
  */
 export async function register(firstName, lastName, email, password, confirmPassword) {
   try {
-    const response = await fetch("http://localhost:8085/api/v1/register", {
+    const response = await fetch(`${API_URL}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
