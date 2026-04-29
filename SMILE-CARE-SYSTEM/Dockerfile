@@ -2,10 +2,8 @@ FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
-COPY . .
+COPY smilecare-backend/ .
 
-RUN ./mvnw clean package -DskipTests
+RUN ./mvnw clean package -DskipTests || mvn clean package -DskipTests
 
-EXPOSE 8085
-
-CMD ["java", "-jar", "target/smilecare-backend-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "target/*.jar"]
