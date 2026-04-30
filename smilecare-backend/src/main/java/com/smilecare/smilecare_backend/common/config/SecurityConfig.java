@@ -22,24 +22,19 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().permitAll()
                 )
-                .httpBasic(basic -> basic.disable())
-                .formLogin(form -> form.disable());
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .httpBasic(b -> b.disable())
+                .formLogin(f -> f.disable());
 
         return http.build();
     }
@@ -52,7 +47,7 @@ public class SecurityConfig {
                 "https://smile-care-system-frontend.onrender.com"
         ));
 
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
 
         config.setAllowedHeaders(List.of("*"));
 
