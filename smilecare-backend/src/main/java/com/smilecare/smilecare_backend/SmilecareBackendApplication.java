@@ -25,6 +25,13 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class SmilecareBackendApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SmilecareBackendApplication.class, args);
+        SpringApplication app = new SpringApplication(SmilecareBackendApplication.class);
+
+        app.setDefaultProperties(java.util.Map.of(
+                "server.port", System.getenv().getOrDefault("PORT", "8085"),
+                "server.address", "0.0.0.0"
+        ));
+
+        app.run(args);
     }
 }
