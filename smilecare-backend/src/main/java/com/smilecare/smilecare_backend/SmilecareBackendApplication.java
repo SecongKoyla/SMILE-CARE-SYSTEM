@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.smilecare.smilecare_backend")
 @EntityScan({
         "com.smilecare.smilecare_backend.appointment.model",
         "com.smilecare.smilecare_backend.timeslot.model",
@@ -25,6 +25,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class SmilecareBackendApplication {
 
     public static void main(String[] args) {
+
         SpringApplication app = new SpringApplication(SmilecareBackendApplication.class);
 
         app.setDefaultProperties(java.util.Map.of(
