@@ -2,15 +2,14 @@ package com.smilecare.smilecare_backend.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+
 import org.springframework.web.cors.*;
-import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
@@ -18,10 +17,10 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // ✅ THIS IS REQUIRED (your error is here)
+    // ✅ REQUIRED (for your DataLoader / Auth)
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
+        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
     }
 
     @Bean
@@ -29,7 +28,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
 
-                // IMPORTANT for Render + browser preflight
+                // ✅ Let Spring handle CORS properly
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 .sessionManagement(session ->
@@ -48,24 +47,22 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsFilter corsFilter() {
-        return new CorsFilter(corsConfigurationSource());
-    }
-
-    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOriginPatterns(List.of(
-                "https://smile-care-system-frontend.onrender.com",
-                "https://*.onrender.com",
-                "http://localhost:*",
-                "*"
+        // ✅ EXACT frontend URL ONLY
+        config.setAllowedOrigins(List.of(
+                "https://smile-care-system-frontend.onrender.com"
         ));
 
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+        ));
+
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+
+        // ❗ IMPORTANT: MUST be false unless using cookies
+        config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
