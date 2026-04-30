@@ -29,8 +29,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(authz -> authz
-                        .requestMatchers(request -> "OPTIONS".equals(request.getMethod())).permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().permitAll()
                 )
                 .httpBasic(basic -> basic.disable())
@@ -43,22 +43,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // ✅ EXACT frontend URL (NO slash at end)
-        config.setAllowedOrigins(List.of(
-                "https://smile-care-system-frontend.onrender.com"
-        ));
-
-        // ✅ Required for preflight
+        config.setAllowedOriginPatterns(List.of("*")); // 👈 TEMPORARY (for debugging)
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-        // ✅ Allow all headers (important for Authorization)
         config.setAllowedHeaders(List.of("*"));
-
-        // ✅ Allow cookies / auth headers
-        config.setAllowCredentials(true);
-
-        // Optional: cache preflight (performance)
-        config.setMaxAge(3600L);
+        config.setAllowCredentials(false); // 👈 REQUIRED when using "*"
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
