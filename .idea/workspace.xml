@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="8bc2f175-964e-41e0-85bc-4f81b1922354" name="Changes" comment="Changes to SecurityConfig.java" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="arrange/files" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;SecongKoyla&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/SecongKoyla/SMILE-CARE-SYSTEM.git&quot;,
+    &quot;accountId&quot;: &quot;2f3db88c-c45c-4cc7-9fc3-46f2e7365534&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="3D1AK9qknuzZTt3AdNtlyt1AvdC" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.SmilecareBackendApplication.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "arrange/files",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/MB/SMILE-CARE-SYSTEM",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\MB\SMILE-CARE-SYSTEM" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration default="true" type="JetRunConfigurationType">
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="8bc2f175-964e-41e0-85bc-4f81b1922354" name="Changes" comment="" />
+      <created>1777439136060</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1777439136060</updated>
+    </task>
+    <task id="LOCAL-00001" summary="Added Dockerfile to both frontend and backend">
+      <option name="closed" value="true" />
+      <created>1777439562695</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1777439562695</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Added Dockerfile to root">
+      <option name="closed" value="true" />
+      <created>1777443312579</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1777443312579</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Fixed Dockerfiles">
+      <option name="closed" value="true" />
+      <created>1777443912118</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1777443912118</updated>
+    </task>
+    <task id="LOCAL-00004" summary="fix(cors): resolve “Failed to Fetch” by updating backend origins and frontend API config&#10;&#10;Added Render deployment URL to allowed origins in SecurityConfig.java to fix backend CORS restrictions, and refactored frontend API configuration in api.js to use import.meta.env.VITE_API_URL with localhost fallback for local development.">
+      <option name="closed" value="true" />
+      <created>1777445134208</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1777445134208</updated>
+    </task>
+    <task id="LOCAL-00005" summary="changes to application.properties to make it secure and for the .env file">
+      <option name="closed" value="true" />
+      <created>1777459410683</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1777459410683</updated>
+    </task>
+    <task id="LOCAL-00006" summary="changes made to api to make it render compatible and .env file">
+      <option name="closed" value="true" />
+      <created>1777460225508</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1777460225508</updated>
+    </task>
+    <task id="LOCAL-00007" summary="changed title to: SMILECARE - DENTAL CLINIC">
+      <option name="closed" value="true" />
+      <created>1777462055866</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1777462055866</updated>
+    </task>
+    <task id="LOCAL-00008" summary="ENV Changes">
+      <option name="closed" value="true" />
+      <created>1777462567253</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1777462567253</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Icon added">
+      <option name="closed" value="true" />
+      <created>1777463135248</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1777463135248</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Auto-logout after 15m inactivity&#10;Tracks user activity, stores lastActivity, checks every minute, logs out after 15 minutes of inactivity, and invalidates session on reload/tab reopen if timeout is exceeded.">
+      <option name="closed" value="true" />
+      <created>1777464115856</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1777464115856</updated>
+    </task>
+    <task id="LOCAL-00011" summary="change url backend">
+      <option name="closed" value="true" />
+      <created>1777464184985</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1777464184985</updated>
+    </task>
+    <task id="LOCAL-00012" summary="added possible fix for CORS probelm in the frontend render">
+      <option name="closed" value="true" />
+      <created>1777466962033</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1777466962033</updated>
+    </task>
+    <task id="LOCAL-00013" summary="fix SecurityConfig.java">
+      <option name="closed" value="true" />
+      <created>1777467591277</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1777467591277</updated>
+    </task>
+    <task id="LOCAL-00014" summary="fix SecurityConfig.java">
+      <option name="closed" value="true" />
+      <created>1777468422259</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1777468422259</updated>
+    </task>
+    <task id="LOCAL-00015" summary="SecurityConfig.java &amp; Main.java changes due to CORS Conflict">
+      <option name="closed" value="true" />
+      <created>1777513127052</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1777513127052</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Security Config changes">
+      <option name="closed" value="true" />
+      <created>1777513828224</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1777513828224</updated>
+    </task>
+    <task id="LOCAL-00017" summary="GlobalCorsConfig &amp; SecurityConfig fixed">
+      <option name="closed" value="true" />
+      <created>1777517008299</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1777517008299</updated>
+    </task>
+    <task id="LOCAL-00018" summary="SecurityConfig.java">
+      <option name="closed" value="true" />
+      <created>1777517886733</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1777517886733</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Main changes">
+      <option name="closed" value="true" />
+      <created>1777520434287</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1777520434287</updated>
+    </task>
+    <task id="LOCAL-00020" summary="SecurityConfig.java then main.java">
+      <option name="closed" value="true" />
+      <created>1777520944580</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1777520944580</updated>
+    </task>
+    <task id="LOCAL-00021" summary="fix: resolve CSS syntax issue and resolve Render CORS policy checks">
+      <option name="closed" value="true" />
+      <created>1777522118247</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1777522118247</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Changes to SecurityConfig.java">
+      <option name="closed" value="true" />
+      <created>1777534060413</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1777534060413</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
+    <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Added Dockerfile to both frontend and backend" />
+    <MESSAGE value="Added Dockerfile to root" />
+    <MESSAGE value="Fixed Dockerfiles" />
+    <MESSAGE value="fix(cors): resolve “Failed to Fetch” by updating backend origins and frontend API config&#10;&#10;Added Render deployment URL to allowed origins in SecurityConfig.java to fix backend CORS restrictions, and refactored frontend API configuration in api.js to use import.meta.env.VITE_API_URL with localhost fallback for local development." />
+    <MESSAGE value="changes to application.properties to make it secure and for the .env file" />
+    <MESSAGE value="changes made to api to make it render compatible and .env file" />
+    <MESSAGE value="changed title to: SMILECARE - DENTAL CLINIC" />
+    <MESSAGE value="ENV Changes" />
+    <MESSAGE value="Icon added" />
+    <MESSAGE value="Auto-logout after 15m inactivity&#10;Tracks user activity, stores lastActivity, checks every minute, logs out after 15 minutes of inactivity, and invalidates session on reload/tab reopen if timeout is exceeded." />
+    <MESSAGE value="change url backend" />
+    <MESSAGE value="added possible fix for CORS probelm in the frontend render" />
+    <MESSAGE value="fix SecurityConfig.java" />
+    <MESSAGE value="SecurityConfig.java &amp; Main.java changes due to CORS Conflict" />
+    <MESSAGE value="Security Config changes" />
+    <MESSAGE value="GlobalCorsConfig &amp; SecurityConfig fixed" />
+    <MESSAGE value="SecurityConfig.java" />
+    <MESSAGE value="Main changes" />
+    <MESSAGE value="SecurityConfig.java then main.java" />
+    <MESSAGE value="fix: resolve CSS syntax issue and resolve Render CORS policy checks" />
+    <MESSAGE value="Changes to SecurityConfig.java" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changes to SecurityConfig.java" />
+  </component>
+</project>
